@@ -91,10 +91,22 @@ export class LoginComponent {
           `organizations/${orgDoc.id}/users/${uid}`
         );
         const userSnap = await getDoc(userRef);
+
+        const adminRef = doc(
+          this.firestore,
+          `organizations/${orgDoc.id}/admins/${uid}`
+        );
+        const adminSnap = await getDoc(adminRef);
         if (userSnap.exists()) {
           role = userSnap.data()?.['role'] || '';
           customization = userSnap.data()?.['customization'] || '';
-          orgId = userSnap.data()?.['orgId'] || ''
+          orgId = userSnap.data()?.['orgId'] || '';
+          break;
+        }
+          else if (adminSnap.exists()) {
+          role = adminSnap.data()?.['role'] || '';
+          customization = adminSnap.data()?.['customization'] || '';
+          orgId = adminSnap.data()?.['orgId'] || '';
           break;
         }
       }
@@ -109,7 +121,7 @@ export class LoginComponent {
 
       if (!orgId) throw new Error('User organization not found');
       localStorage.setItem('orgId', orgId);
-      
+
       if (!uid) throw new Error('User not found');
       localStorage.setItem('uid', uid);
 

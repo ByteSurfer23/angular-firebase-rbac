@@ -1,0 +1,24 @@
+<div class="p-6 max-w-xl mx-auto bg-white rounded shadow space-y-4">
+  <h2 class="text-lg font-semibold text-center">Create New Task</h2>
+
+  <input [(ngModel)]="taskDetail" name="taskDetail" placeholder="Task Details" required
+    class="w-full p-2 border rounded-md" />
+
+  <input [(ngModel)]="enquiryDate" name="enquiryDate" type="date" required
+    class="w-full p-2 border rounded-md" />
+
+  <select [(ngModel)]="status" name="status" class="w-full p-2 border rounded-md">
+    <option value="pending">Pending</option>
+    <option value="in-progress">In Progress</option>
+    <option value="completed">Completed</option>
+  </select>
+
+  <select [(ngModel)]="assignedTo" name="assignedTo" class="w-full p-2 border rounded-md">
+    <option value="">-- Assign to User --</option>
+    <option *ngFor="let user of users" [value]="user.uid">{{ user.name }}</option>
+  </select>
+
+  <button (click)="submitTask()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+    Create Task
+  </button>
+</div>

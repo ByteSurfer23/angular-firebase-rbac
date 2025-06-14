@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { CreateUserComponent } from "../user-admin/user-admin";
+import { CreateUserComponent, CreateAdminComponent } from "../user-admin/user-admin";
 import { NgIf } from '@angular/common';
+import { TaskListComponent } from "../task-list/task-list";
+import { TaskFormComponent } from "../task-form/task-form";
 @Component({
   selector: 'app-dashboard',
 
@@ -15,10 +17,13 @@ import { NgIf } from '@angular/common';
         <p>{{orgId}}</p>
         <p>{{uid}}</p>
         <app-create-user *ngIf="role === 'root'" [orgId] = "orgId"></app-create-user>
+        <app-create-admin *ngIf="role === 'root'" [orgId] = "orgId"></app-create-admin>
+        <app-task-list *ngIf="role === 'admin'" [orgId] = "orgId"></app-task-list>
+        <app-task-form *ngIf="role === 'admin'" [orgId] = "orgId"></app-task-form>
       </div>
     </div>
   `,
-  imports: [CreateUserComponent , NgIf],
+  imports: [CreateUserComponent, NgIf, CreateAdminComponent, TaskListComponent, TaskFormComponent],
 })
 
 export class DashboardComponent implements OnInit {

@@ -1,0 +1,13 @@
+<div class="p-4 space-y-4">
+  <div *ngFor="let task of tasks" class="border p-4 rounded-md bg-white shadow">
+    <h3 class="text-lg font-semibold">{{ task.taskDetail }}</h3>
+    <p><strong>Status:</strong> {{ task.status }}</p>
+    <p><strong>Enquiry Date:</strong> {{ task.enquiryDate }}</p>
+    <p><strong>Assigned To:</strong> {{ task.assignedTo || 'None' }}</p>
+
+    <div class="mt-2 space-x-2">
+      <button class="bg-yellow-500 text-white px-3 py-1 rounded" [routerLink]="['/edit-task', task.id]">Edit</button>
+      <button class="bg-red-600 text-white px-3 py-1 rounded" (click)="deleteTask(task.id)">Delete</button>
+    </div>
+  </div>
+</div>
