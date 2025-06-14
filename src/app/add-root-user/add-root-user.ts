@@ -22,6 +22,13 @@ import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
         class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
       <input [(ngModel)]="password" name="password" type="password" placeholder="Password" required
         class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+      <div class="flex flex-col space-y-2">
+        <label><input type="checkbox" [(ngModel)]="customization.userAnalytics" name="userAnalytics" /> Enable User Analytics</label>
+        <label><input type="checkbox" [(ngModel)]="customization.orgAnalytics" name="orgAnalytics" /> Enable Org Analytics</label>
+        <label><input type="checkbox" [(ngModel)]="customization.auditLog" name="auditLog" /> Enable Audit Log</label>
+      </div>
+
       <button type="submit"
         class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
         Create Organization & Root User
@@ -35,6 +42,11 @@ export class AddRootUserComponent {
   rootName = '';
   email = '';
   password = '';
+  customization = {
+    userAnalytics: false,
+    orgAnalytics: false,
+    auditLog: false
+  };
 
   constructor(private firestore: Firestore, private router: Router, private auth: Auth) {}
 
@@ -63,11 +75,12 @@ export class AddRootUserComponent {
         email: this.email,
         role: 'root',
         createdAt: new Date(),
-        isActive: true
+        isActive: true,
+        customization: this.customization,
       });
 
       alert('Organization and root user created successfully');
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['']);
     } catch (err) {
       console.error('Error creating organization/root user:', err);
       alert('Failed to create organization/root user');
