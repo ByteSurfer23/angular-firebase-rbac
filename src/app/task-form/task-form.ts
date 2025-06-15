@@ -16,6 +16,7 @@ export class TaskFormComponent {
   enquiryDate = '';
   status = 'pending';
   assignedTo = '';
+  reminderDate = '';
   users: any[] = [];
 
   constructor(private firestore: Firestore) {}
@@ -33,7 +34,8 @@ export class TaskFormComponent {
       assignedTo: this.assignedTo,
       createdAt: new Date(),
       enquiryDate: this.enquiryDate,
-      status: this.status
+      status: this.status,
+      reminderDate : this.reminderDate,
     });
 
     alert('Task created');

@@ -1,18 +1,26 @@
 <div class="p-6 max-w-xl mx-auto bg-white rounded shadow space-y-4">
   <h2 class="text-lg font-semibold text-center">Create New Task</h2>
 
+  <label class="block text-sm font-medium text-gray-700">Task Details</label>
   <input [(ngModel)]="taskDetail" name="taskDetail" placeholder="Task Details" required
     class="w-full p-2 border rounded-md" />
 
+  <label class="block text-sm font-medium text-gray-700">Enquiry Date</label>
   <input [(ngModel)]="enquiryDate" name="enquiryDate" type="date" required
     class="w-full p-2 border rounded-md" />
 
+  <label class="block text-sm font-medium text-gray-700">Reminder Date</label>
+  <input [(ngModel)]="reminderDate" name="reminderDate" type="date" required
+    class="w-full p-2 border rounded-md" />
+
+  <label class="block text-sm font-medium text-gray-700">Status</label>
   <select [(ngModel)]="status" name="status" class="w-full p-2 border rounded-md">
     <option value="pending">Pending</option>
     <option value="in-progress">In Progress</option>
     <option value="completed">Completed</option>
   </select>
 
+  <label class="block text-sm font-medium text-gray-700">Assign to User</label>
   <select [(ngModel)]="assignedTo" name="assignedTo" class="w-full p-2 border rounded-md">
     <option value="">-- Assign to User --</option>
     <option *ngFor="let user of users" [value]="user.uid">{{ user.name }}</option>
