@@ -68,7 +68,7 @@ import { UpdateTaskStatusComponent } from '../update-task-status/update-task-sta
         <!-- User Features -->
         <div
           *ngIf="role === 'user'"
-          class="p-6 bg-yellow-50 rounded-lg border border-yellow-200 space-y-6"
+          class="p-6 bg-yellow-50 rounded-lg border space-y-6"
         >
           <h2 class="text-xl font-semibold text-yellow-800">Your Tasks</h2>
           <app-update-task-status

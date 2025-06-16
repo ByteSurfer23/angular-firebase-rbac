@@ -15,7 +15,7 @@ export class TaskFormComponent {
   taskDetail = '';
   enquiryDate = '';
   status = 'pending';
-  assignedTo = '';
+  assignedTo = [];
   reminderDate = '';
   users: any[] = [];
 
@@ -40,7 +40,7 @@ export class TaskFormComponent {
 
     alert('Task created');
     this.taskDetail = '';
-    this.assignedTo = '';
+    this.assignedTo = [];
     this.enquiryDate = '';
     this.status = 'pending';
   }

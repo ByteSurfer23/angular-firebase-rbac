@@ -16,31 +16,38 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-  <div class="max-w-xl mx-auto p-6 bg-white rounded shadow space-y-4">
-    <h2 class="text-lg font-semibold text-center">My Assigned Tasks</h2>
+  <div class="max-w-8xl mx-auto p-6  rounded  space-y-4">
+  <h2 class="text-lg font-semibold text-center">My Assigned Tasks</h2>
 
-    <div *ngFor="let task of tasks" class="p-4 border rounded space-y-2 bg-gray-50">
-      <p><strong>Task Detail:</strong> {{ task.taskDetail }}</p>
-      <p><strong>Assigned To:</strong> {{ task.assignedTo }}</p>
-      <p><strong>Date of Creation:</strong> {{ task.createdAt?.toDate?.() | date: 'medium' }}</p>
-      <p><strong>Enquiry Date:</strong> {{ task.enquiryDate }}</p>
-      <p><strong>Reminder Date:</strong> {{ task.reminderDate }}</p>
-      <p><strong>Status:</strong> 
-        <select [(ngModel)]="task.status" class="w-full p-2 border rounded">
-          <option value="pending">Pending</option>
-          <option value="in-progress">In Progress</option>
-          <option value="completed">Completed</option>
-        </select>
-      </p>
-      <button (click)="updateTaskStatus(task)" class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700">
-        Update Status
-      </button>
+  <div *ngFor="let task of tasks" class="w-full p-4 border rounded bg-gray-50 space-y-2">
+    <p><strong>Task Detail:</strong> {{ task.taskDetail }}</p>
+    <p><strong>Assigned To:</strong> {{ task.assignedTo }}</p>
+    <p><strong>Date of Creation:</strong> {{ task.createdAt?.toDate?.() | date: 'medium' }}</p>
+    <p><strong>Enquiry Date:</strong> {{ task.enquiryDate }}</p>
+    <p><strong>Reminder Date:</strong> {{ task.reminderDate }}</p>
+
+    <div>
+      <label><strong>Status:</strong></label>
+      <select [(ngModel)]="task.status" class="w-full p-2 border rounded">
+        <option value="pending">Pending</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+      </select>
     </div>
 
-    <div *ngIf="tasks.length === 0" class="text-center text-gray-500">
-      No tasks assigned to you.
-    </div>
+    <button
+      (click)="updateTaskStatus(task)"
+      class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+    >
+      Update Status
+    </button>
   </div>
+
+  <div *ngIf="tasks.length === 0" class="text-center text-gray-500">
+    No tasks assigned to you.
+  </div>
+</div>
+
 `
 
 })
@@ -53,7 +60,7 @@ export class UpdateTaskStatusComponent implements OnInit {
 
   async ngOnInit() {
     const tasksRef = collection(this.firestore, `organizations/${this.orgId}/tasks`);
-    const q = query(tasksRef, where('assignedTo', '==', this.userId));
+    const q = query(tasksRef, where('assignedTo', 'array-contains', this.userId));
     const querySnap = await getDocs(q);
     this.tasks = querySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
