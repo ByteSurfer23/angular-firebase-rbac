@@ -10,6 +10,7 @@ import {
 } from '@angular/fire/firestore';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry';
 
 @Component({
   selector: 'app-edit-task',
@@ -63,9 +64,23 @@ export class EditTaskComponent implements OnInit {
   }
 
   async updateTask() {
+    const task_id_copy = this.taskId;
+    const uid = localStorage.getItem('uid');
+    try{
     const taskRef = doc(this.firestore, `organizations/${this.orgId}/tasks/${this.taskId}`);
     await updateDoc(taskRef, this.task);
+    logAuditActionWithSetDoc(
+      this.firestore,
+      uid || '',
+      'task_edit',
+      `task_${task_id_copy}`,
+      'success'
+
+    );
     alert('Task updated successfully');
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/dashboard']);}
+    catch(error){
+      console.log(error);
+    }
   }
 }

@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { Firestore, collection, getDocs, deleteDoc, doc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry';
 @Component({
   selector: 'app-task-list',
   standalone: true,
@@ -24,6 +25,14 @@ export class TaskListComponent implements OnInit {
     const taskRef = doc(this.firestore, `organizations/${this.orgId}/tasks/${taskId}`);
     await deleteDoc(taskRef);
     this.tasks = this.tasks.filter(task => task.id !== taskId);
+    const uid = localStorage.getItem('uid');
+    logAuditActionWithSetDoc(
+      this.firestore,
+      uid || '',
+      'task_delete',
+      taskId,
+      'success'
+    )
     alert('Task deleted');
   }
 }
