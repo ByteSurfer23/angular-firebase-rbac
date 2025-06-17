@@ -61,7 +61,7 @@ import { UpdateTaskStatusComponent } from '../update-task-status/update-task-sta
           class="p-6 bg-green-50 rounded-lg border border-green-200 space-y-6"
         >
           <h2 class="text-xl font-semibold text-green-800">Admin Features</h2>
-          <app-task-form [orgId]="orgId"></app-task-form>
+          <app-task-form></app-task-form>
           <app-task-list [orgId]="orgId"></app-task-list>
         </div>
 
