@@ -1,0 +1,102 @@
+<!-- src/app/user-productivity-analytics/userstats.html -->
+<div class="analytics-page-container">
+  <h1>User Productivity Analytics</h1>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <input type="text" [formControl]="searchUserUidControl" placeholder="Enter User UID (e.g., mTP9tGGVkHdPnECRItZtFxFC83J2)">
+    <button (click)="searchUser(searchUserUidControl.value || '')" [disabled]="isLoading">
+      {{ isLoading ? 'Searching...' : 'Search User' }}
+    </button>
+  </div>
+
+  <!-- Error Message Display -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading && !errorMessage" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading user data and tasks...</p>
+  </div>
+
+  <!-- Main Content Section: User Details, Tasks, and Charts -->
+  <!-- This entire div is conditional. It only appears if not loading AND a user is found. -->
+  <div *ngIf="!isLoading && currentUser" class="user-data-and-charts">
+    <!-- Debugging: Check if this div is being rendered -->
+    <ng-container *ngIf="true">
+      {{ logHtmlState('user-data-and-charts div is rendered. isLoading:', isLoading, 'currentUser:', currentUser) }}
+    </ng-container>
+
+    <!-- User Details Card -->
+    <div class="user-details-card">
+      <h2>{{ currentUser?.name }}'s Profile</h2>
+      <p><strong>UID:</strong> {{ currentUser?.uid }}</p>
+      <p><strong>Email:</strong> {{ currentUser?.email }}</p>
+      <p><strong>Role:</strong> {{ currentUser?.role }}</p>
+      <p><strong>Status:</strong> <span [class.active-status]="currentUser?.isActive" [class.inactive-status]="!currentUser?.isActive">{{ currentUser?.isActive ? 'Active' : 'Inactive' }}</span></p>
+      <p><strong>Joined:</strong> {{ getLocalDateString(toDateObject(currentUser?.createdAt)) }}</p>
+      <p *ngIf="currentUser?.customization">
+        <strong>Customization:</strong>
+        Audit Log: {{ currentUser?.customization?.auditLog ? 'Enabled' : 'Disabled' }} |
+        Org Analytics: {{ currentUser?.customization?.orgAnalytics ? 'Enabled' : 'Disabled' }} |
+        User Analytics: {{ currentUser?.customization?.userAnalytics ? 'Enabled' : 'Disabled' }}
+      </p>
+    </div>
+
+    <!-- User Tasks List Card -->
+    <div class="user-tasks-card">
+      <h3>Tasks Assigned to {{ currentUser?.name }} ({{ currentUserTasks.length }} tasks)</h3>
+      <div *ngIf="currentUserTasks.length === 0" class="no-tasks-message">
+        <p>No tasks found for this user.</p>
+      </div>
+      <ul *ngIf="currentUserTasks.length > 0" class="task-list">
+        <li *ngFor="let task of currentUserTasks" class="task-item">
+          <p><strong>Detail:</strong> {{ task.taskDetail || 'N/A' }}</p>
+          <p><strong>Status:</strong> <span [class.task-status-pending]="task.status === 'pending'"
+                                        [class.task-status-inprogress]="task.status === 'in-progress'"
+                                        [class.task-status-completed]="task.status === 'completed'">{{ task.status || 'N/A' }}</span></p>
+          <p><strong>Created:</strong> {{ getLocalDateString(toDateObject(task.createdAt)) }}</p>
+          <p *ngIf="task.reminderDate"><strong>Reminder:</strong> {{ getLocalDateString(toDateObject(task.reminderDate)) }}</p>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Charts Grid Container -->
+    <div class="charts-grid-container">
+      <!-- Debugging: Check if this chart container is being rendered -->
+      <ng-container *ngIf="true">
+        {{ logHtmlState('charts-grid-container is rendered. Tasks:', currentUserTasks.length) }}
+      </ng-container>
+
+      <div class="chart-card">
+        <h3>My Task Status Breakdown</h3>
+        <div class="chart-canvas-container">
+          <canvas id="chart-user-status"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>My Task Load Over Time</h3>
+        <div class="chart-canvas-container">
+          <canvas id="chart-user-load"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>My Task Completion Rate</h3>
+        <div class="chart-canvas-container">
+          <canvas id="chart-user-completion"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>My Overdue Tasks Glance</h3>
+        <div class="chart-canvas-container">
+          <canvas id="chart-user-overdue"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
