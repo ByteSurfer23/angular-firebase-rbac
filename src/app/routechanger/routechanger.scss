@@ -1,0 +1,9 @@
+.btn {
+  @apply py-3 px-6 text-white text-lg font-semibold rounded-lg transition-all duration-300;
+  @apply bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-md hover:shadow-lg;
+  @apply flex items-center justify-center gap-2;
+
+  &:hover {
+    @apply ring-2 ring-indigo-300;
+  }
+}

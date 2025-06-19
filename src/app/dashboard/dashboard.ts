@@ -7,6 +7,7 @@ import { NgIf } from '@angular/common';
 import { TaskListComponent } from '../task-list/task-list';
 import { TaskFormComponent } from '../task-form/task-form';
 import { UpdateTaskStatusComponent } from '../update-task-status/update-task-status';
+import { CustomButtonsComponent } from "../routechanger/routechanger";
 @Component({
   selector: 'app-dashboard',
 
@@ -37,6 +38,7 @@ import { UpdateTaskStatusComponent } from '../update-task-status/update-task-sta
           <p><strong>Organization ID:</strong> {{ orgId }}</p>
           <p><strong>User ID:</strong> {{ uid }}</p>
         </div>
+        <app-custom-buttons [customization] = "customization"></app-custom-buttons>
       </div>
 
       <!-- Feature Section -->
@@ -86,7 +88,8 @@ import { UpdateTaskStatusComponent } from '../update-task-status/update-task-sta
     TaskListComponent,
     TaskFormComponent,
     UpdateTaskStatusComponent,
-  ],
+    CustomButtonsComponent
+],
 })
 export class DashboardComponent implements OnInit {
   role: string | null = '';
@@ -103,6 +106,7 @@ export class DashboardComponent implements OnInit {
     if (customizationStr) {
       this.customization = JSON.parse(customizationStr);
     }
+    const buttoninput = this.customization;
     this.orgId = localStorage.getItem('orgId');
     this.uid = localStorage.getItem('uid');
   }
