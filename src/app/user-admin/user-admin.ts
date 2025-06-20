@@ -247,3 +247,125 @@ export class CreateAdminComponent {
     alert('Admin created');
   }
 }
+
+
+@Component({
+  selector: 'app-create-domain',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <form
+      (ngSubmit)="createDomain()"
+      class="bg-white shadow-md rounded-xl p-6 max-w-md mx-auto space-y-4 mt-8"
+    >
+      <h3 class="text-xl font-semibold text-center text-gray-800">
+        Create Domain
+      </h3>
+
+      <input
+        [(ngModel)]="name"
+        name="name"
+        placeholder="Domain Name"
+        required
+        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <input
+        [(ngModel)]="email"
+        name="email"
+        placeholder="Email"
+        required
+        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <input
+        [(ngModel)]="password"
+        name="password"
+        type="password"
+        placeholder="Password"
+        required
+        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <div class="space-y-2">
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="userAnalytics"
+            name="userAnalytics"
+          />
+          <span>User Analytics</span>
+        </label>
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="orgAnalytics"
+            name="orgAnalytics"
+          />
+          <span>Org Analytics</span>
+        </label>
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" [(ngModel)]="auditLog" name="auditLog" />
+          <span>Audit Log</span>
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition"
+      >
+        Create Admin
+      </button>
+    </form>
+  `,
+})
+export class CreateDomainComponent {
+  @Input() orgId!: string | null;
+  name = '';
+  email = '';
+  password = '';
+  userAnalytics = false;
+  orgAnalytics = false;
+  auditLog = false;
+
+  constructor(private firestore: Firestore, private auth: Auth) {}
+
+  async createDomain() {
+    const userCredential = await createUserWithEmailAndPassword(
+      this.auth,
+      this.email,
+      this.password
+    );
+    const uid = userCredential.user.uid;
+    const adminRef = doc(
+      this.firestore,
+      `organizations/${this.orgId}/domain/${uid}`
+    );
+    await setDoc(adminRef, {
+      uid,
+      orgId: this.orgId,
+      name: this.name,
+      email: this.email,
+      role: 'domain_root',
+      createdAt: new Date(),
+      isActive: true,
+      customization: {
+        userAnalytics: this.userAnalytics,
+        orgAnalytics: this.orgAnalytics,
+        auditLog: this.auditLog,
+      },
+    });
+
+    // create admin
+
+    let actoruid = localStorage.getItem('uid');
+    logAuditActionWithSetDoc(
+      this.firestore,
+      actoruid || '',
+      'domain_creation',
+      uid, // Resource is the newly created user's UID
+      'success'
+    );
+    alert('Admin created');
+  }
+}

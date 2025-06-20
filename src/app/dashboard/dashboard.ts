@@ -1,8 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {
-  CreateUserComponent,
-  CreateAdminComponent,
-} from '../user-admin/user-admin';
+import { CreateUserComponent, CreateAdminComponent, CreateDomainComponent } from '../user-admin/user-admin';
 import { NgIf } from '@angular/common';
 import { TaskListComponent } from '../task-list/task-list';
 import { TaskFormComponent } from '../task-form/task-form';
@@ -52,6 +49,7 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
           <div class="flex justify-around">
             <app-create-user [orgId]="orgId"></app-create-user>
             <app-create-admin [orgId]="orgId"></app-create-admin>
+            <app-create-domain [orgId]="orgId"></app-create-domain>
           </div>
 
           <app-task-list [orgId]="orgId"></app-task-list>
@@ -88,7 +86,8 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
     TaskListComponent,
     TaskFormComponent,
     UpdateTaskStatusComponent,
-    CustomButtonsComponent
+    CustomButtonsComponent,
+    CreateDomainComponent
 ],
 })
 export class DashboardComponent implements OnInit {
