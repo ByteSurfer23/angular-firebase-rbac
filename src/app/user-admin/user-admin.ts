@@ -1,6 +1,6 @@
 // create-user.component.ts
 import { Component, Input, OnInit } from '@angular/core';
-import { Firestore, collection, doc, getDocs, setDoc } from '@angular/fire/firestore';
+import { Firestore, arrayUnion, collection, doc, getDocs, setDoc, updateDoc } from '@angular/fire/firestore';
 import { FormsModule } from '@angular/forms';
 import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
 import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry';
@@ -451,6 +451,7 @@ export class CreateDomainComponent {
         this.firestore,
         `organizations/${this.orgId}/domain/${uid}`
       );
+
       await setDoc(domainRef, {
         uid,
         orgId: this.orgId,
@@ -465,7 +466,11 @@ export class CreateDomainComponent {
           auditLog: this.auditLog,
         },
       });
-
+      const orgId = localStorage.getItem('orgId');
+      const orgRef = doc(this.firestore, `organizations/${orgId}`);
+    await updateDoc(orgRef, {
+      domains: arrayUnion(this.name)
+    })
       const actoruid = localStorage.getItem('uid');
       logAuditActionWithSetDoc(
         this.firestore,
