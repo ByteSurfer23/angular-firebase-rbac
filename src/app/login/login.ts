@@ -76,53 +76,99 @@ export class LoginComponent {
       console.log(userCred.user);
       const uid = userCred.user.uid;
 
-      // Find user's role by scanning through organizations
-      const orgsSnap = await getDocs(
-        collection(this.firestore, 'organizations')
-      );
       let role = '';
       let customization = '';
       let orgId = '';
-      // here userRef is just referencing the path to the doc
-      // getDoc actually gets the doc
-      for (const orgDoc of orgsSnap.docs) {
-        const userRef = doc(
-          this.firestore,
-          `organizations/${orgDoc.id}/users/${uid}`
-        );
-        const userSnap = await getDoc(userRef);
 
-        const adminRef = doc(
+      // First, try to find the user as a 'root' admin directly under an organization
+      const orgsSnap = await getDocs(
+        collection(this.firestore, 'organizations')
+      );
+
+      for (const orgDoc of orgsSnap.docs) {
+        const rootAdminRef = doc(
           this.firestore,
-          `organizations/${orgDoc.id}/admins/${uid}`
+          `organizations/${orgDoc.id}/root/${uid}`
         );
-        const adminSnap = await getDoc(adminRef);
-        if (userSnap.exists()) {
-          role = userSnap.data()?.['role'] || '';
-          customization = userSnap.data()?.['customization'] || '';
-          orgId = userSnap.data()?.['orgId'] || '';
-          break;
-        }
-          else if (adminSnap.exists()) {
-          role = adminSnap.data()?.['role'] || '';
-          customization = adminSnap.data()?.['customization'] || '';
-          orgId = adminSnap.data()?.['orgId'] || '';
-          break;
+        const rootAdminSnap = await getDoc(rootAdminRef);
+
+        if (rootAdminSnap.exists() && rootAdminSnap.data()?.['role'] === 'root') {
+          role = 'root';
+          customization = rootAdminSnap.data()?.['customization'] || '';
+          orgId = orgDoc.id;
+          break; // Root user found, no need to check further
         }
       }
 
-      if (!role) throw new Error('User role not found');
-      localStorage.setItem('userRole', role); // here the user's role is being stored as a key value pair
+      // If not a 'root' user, proceed to check the deeply nested structure
+      if (!role) {
+        const userDomain = this.email.split('@')[1];
 
-      if (!customization) throw new Error('User customization not found');
+        for (const orgDoc of orgsSnap.docs) {
+          orgId = orgDoc.id; // Potential orgId
+
+          // 2. Check within the 'domains' subcollection for the user's domain
+          const domainsSnap = await getDocs(
+            collection(this.firestore, `organizations/${orgId}/domains`)
+          );
+
+          for (const domainDoc of domainsSnap.docs) {
+            // Assuming domainDoc.id is the actual domain name (e.g., 'example.com')
+            if (domainDoc.id === userDomain) {
+              const domainId = domainDoc.id;
+
+              // 3. Check within the 'admins' subcollection of that domain
+              const domainAdminsSnap = await getDocs(
+                collection(
+                  this.firestore,
+                  `organizations/${orgId}/domains/${domainId}/admins`
+                )
+              );
+
+              for (const adminDoc of domainAdminsSnap.docs) {
+                // Now, check if this admin has a 'projects' subcollection
+                const projectsSnap = await getDocs(
+                  collection(
+                    this.firestore,
+                    `organizations/${orgId}/domains/${domainId}/admins/${adminDoc.id}/projects`
+                  )
+                );
+
+                for (const projectDoc of projectsSnap.docs) {
+                  // 4. Finally, check within the 'users' subcollection of that project
+                  const projectUsersSnap = await getDocs(
+                    collection(
+                      this.firestore,
+                      `organizations/${orgId}/domains/${domainId}/admins/${adminDoc.id}/projects/${projectDoc.id}/users`
+                    )
+                  );
+
+                  for (const userDoc of projectUsersSnap.docs) {
+                    if (userDoc.id === uid) {
+                      role = userDoc.data()?.['role'] || '';
+                      customization = userDoc.data()?.['customization'] || '';
+                      // orgId is already set
+                      break; // User found, stop checking projects
+                    }
+                  }
+                  if (role) break; // User found in a project, stop checking projects
+                }
+                if (role) break; // User found in an admin's projects, stop checking admins
+              }
+            }
+            if (role) break; // User found in a domain's hierarchy, stop checking domains
+          }
+          if (role) break; // User found in this organization, stop checking other organizations
+        }
+      }
+
+      if (!role) {
+        throw new Error('User role not found or not authorized.');
+      }
+
+      localStorage.setItem('userRole', role);
       localStorage.setItem('customization', JSON.stringify(customization));
-      // where key = userRole and role is the value itself
-      // this is stored in localstorage
-
-      if (!orgId) throw new Error('User organization not found');
       localStorage.setItem('orgId', orgId);
-
-      if (!uid) throw new Error('User not found');
       localStorage.setItem('uid', uid);
 
       this.router.navigate(['/dashboard']);

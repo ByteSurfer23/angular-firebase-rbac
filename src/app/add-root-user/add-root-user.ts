@@ -67,7 +67,7 @@ export class AddRootUserComponent {
         active: true
       });
 
-      const userRef = doc(this.firestore, `organizations/${orgId}/users/${uid}`);
+      const userRef = doc(this.firestore, `organizations/${orgId}/root/${uid}`);
       await setDoc(userRef, {
         uid,
         orgId,
