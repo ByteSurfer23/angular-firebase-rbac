@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { CreateUserComponent, CreateAdminComponent, CreateDomainComponent } from '../user-admin/user-admin';
+import { CreateAdminComponent, CreateDomainComponent } from '../user-admin/user-admin';
+import { CreateUserComponent } from '../createuser/createuser';
 import { NgIf } from '@angular/common';
 import { TaskListComponent } from '../task-list/task-list';
 import { TaskFormComponent } from '../task-form/task-form';
@@ -47,7 +48,6 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
         >
           <h2 class="text-xl font-semibold text-blue-800">Root Features</h2>
           <div class="flex justify-around">
-            <app-create-user [orgId]="orgId"></app-create-user>
             <app-create-admin [orgId]="orgId"></app-create-admin>
             <app-create-domain [orgId]="orgId"></app-create-domain>
           </div>
@@ -61,6 +61,7 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
           class="p-6 bg-green-50 rounded-lg border border-green-200 space-y-6"
         >
           <h2 class="text-xl font-semibold text-green-800">Admin Features</h2>
+          <app-create-user [orgId]="orgId"></app-create-user>
           <app-task-form></app-task-form>
           <app-task-list [orgId]="orgId"></app-task-list>
         </div>
