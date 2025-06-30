@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { CreateAdminComponent, CreateDomainComponent } from '../user-admin/user-admin';
+import { CreateAdminComponent } from '../create-admin/create-admin';
+import { CreateDomainComponent } from '../create-domain/create-domain';
 import { CreateUserComponent } from '../createuser/createuser';
 import { NgIf } from '@angular/common';
 import { TaskListComponent } from '../task-list/task-list';
@@ -83,12 +84,12 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
   imports: [
     CreateUserComponent,
     NgIf,
-    CreateAdminComponent,
     TaskListComponent,
     TaskFormComponent,
     UpdateTaskStatusComponent,
     CustomButtonsComponent,
-    CreateDomainComponent
+    CreateDomainComponent,
+    CreateAdminComponent
 ],
 })
 export class DashboardComponent implements OnInit {
