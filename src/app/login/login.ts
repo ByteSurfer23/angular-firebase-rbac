@@ -72,6 +72,12 @@ export class LoginComponent {
   ) {}
 
   async login() {
+    let role = '';
+    let customization: any = null; // Can be an object or null
+    let orgId = '';
+    let userFoundInFirestore = false; // Flag to indicate if user data is found in Firestore
+    let domainid = '';
+    let useremail: string | null = '';
     this.errorMessage = null; // Clear any previous error messages
     try {
       const userCred = await signInWithEmailAndPassword(
@@ -81,12 +87,7 @@ export class LoginComponent {
       );
       console.log('Firebase Auth User:', userCred.user);
       const uid = userCred.user.uid;
-
-      let role = '';
-      let customization: any = null; // Can be an object or null
-      let orgId = '';
-      let userFoundInFirestore = false; // Flag to indicate if user data is found in Firestore
-
+      useremail = this.email;
       // Step 1: Try to find the user as a 'root' admin (UNTOUCHED)
       const orgsSnap = await getDocs(
         collection(this.firestore, 'organizations')
@@ -99,7 +100,10 @@ export class LoginComponent {
         );
         const rootAdminSnap = await getDoc(rootAdminRef);
 
-        if (rootAdminSnap.exists() && rootAdminSnap.data()?.['role'] === 'root') {
+        if (
+          rootAdminSnap.exists() &&
+          rootAdminSnap.data()?.['role'] === 'root'
+        ) {
           role = 'root';
           customization = rootAdminSnap.data()?.['customization'] || {};
           orgId = orgDoc.id;
@@ -118,27 +122,34 @@ export class LoginComponent {
         let userDomain = '';
 
         // List of common public email providers. Add more as needed.
-        const commonProviders = ['gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'aol.com', 'protonmail.com'];
+        const commonProviders = [
+          'gmail.com',
+          'outlook.com',
+          'yahoo.com',
+          'hotmail.com',
+          'aol.com',
+          'protonmail.com',
+        ];
 
         if (commonProviders.includes(emailHost)) {
-            // If it's a common provider, we look for the "yourdomainname" inside the local part
-            const localNameParts = localPart.split('.'); // e.g., ["xyz", "yourdomainname"]
-            if (localNameParts.length >= 2) {
-                // If the format is 'something.yourdomainname@provider.com',
-                // 'yourdomainname' is the last segment of the local part.
-                userDomain = localNameParts[localNameParts.length - 1];
-            } else {
-                // If no dot in local part (e.g., "username@gmail.com"), it doesn't fit the custom domain pattern.
-                userDomain = '';
-            }
+          // If it's a common provider, we look for the "yourdomainname" inside the local part
+          const localNameParts = localPart.split('.'); // e.g., ["xyz", "yourdomainname"]
+          if (localNameParts.length >= 2) {
+            // If the format is 'something.yourdomainname@provider.com',
+            // 'yourdomainname' is the last segment of the local part.
+            userDomain = localNameParts[localNameParts.length - 1];
+          } else {
+            // If no dot in local part (e.g., "username@gmail.com"), it doesn't fit the custom domain pattern.
+            userDomain = '';
+          }
         } else {
-            // If it's not a common provider (e.g., user@yourcompany.com), the host itself is the domain.
-            userDomain = emailHost;
+          // If it's not a common provider (e.g., user@yourcompany.com), the host itself is the domain.
+          userDomain = emailHost;
         }
         // --- END MODIFIED DOMAIN EXTRACTION LOGIC ---
 
-
-        if (userDomain) { // Only proceed if a userDomain was successfully extracted
+        if (userDomain) {
+          // Only proceed if a userDomain was successfully extracted
           for (const orgDoc of orgsSnap.docs) {
             // If a user was found in a previous orgDoc iteration as admin/user, stop searching
             if (userFoundInFirestore) break;
@@ -146,20 +157,25 @@ export class LoginComponent {
             orgId = orgDoc.id; // Set current organization ID
             const orgData = orgDoc.data();
             // Retrieve the 'domains' map from the organization document
-            const domainsMap: { [key: string]: string } = orgData?.['domains'] || {};
+            const domainsMap: { [key: string]: string } =
+              orgData?.['domains'] || {};
 
             // Find the domain UID associated with the extracted userDomain name
             const domainUid = domainsMap[userDomain];
 
             if (domainUid) {
               // Check for user in the 'admins' subcollection of this specific domain
+              domainid = domainUid;
               const adminRef = doc(
                 this.firestore,
                 `organizations/${orgId}/domain/${domainUid}/admins/${uid}`
               );
               const adminSnap = await getDoc(adminRef);
 
-              if (adminSnap.exists() && adminSnap.data()?.['role'] === 'admin') {
+              if (
+                adminSnap.exists() &&
+                adminSnap.data()?.['role'] === 'admin'
+              ) {
                 role = 'admin';
                 customization = adminSnap.data()?.['customization'] || {};
                 userFoundInFirestore = true;
@@ -187,7 +203,9 @@ export class LoginComponent {
       }
 
       if (!userFoundInFirestore) {
-        throw new Error('User profile not found or not authorized for any organization/domain.');
+        throw new Error(
+          'User profile not found or not authorized for any organization/domain.'
+        );
       }
 
       // Store user information in local storage
@@ -195,13 +213,19 @@ export class LoginComponent {
       localStorage.setItem('customization', JSON.stringify(customization));
       localStorage.setItem('orgId', orgId);
       localStorage.setItem('uid', uid);
+      localStorage.setItem('domainUid', domainid);
+      localStorage.setItem('useremail', useremail);
 
       // Navigate to dashboard
       this.router.navigate(['/dashboard']);
     } catch (err: any) {
       console.error('Login failed:', err);
       // Provide user-friendly error messages
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      if (
+        err.code === 'auth/user-not-found' ||
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/invalid-credential'
+      ) {
         this.errorMessage = 'Invalid email or password.';
       } else if (err.message) {
         this.errorMessage = err.message; // Display specific error from custom throws

@@ -1,12 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CreateAdminComponent } from '../create-admin/create-admin';
 import { CreateDomainComponent } from '../create-domain/create-domain';
-import { CreateUserComponent } from '../createuser/createuser';
 import { NgIf } from '@angular/common';
 import { TaskListComponent } from '../task-list/task-list';
-import { TaskFormComponent } from '../task-form/task-form';
 import { UpdateTaskStatusComponent } from '../update-task-status/update-task-status';
 import { CustomButtonsComponent } from "../routechanger/routechanger";
+import { CreateProjectComponent } from "../domain-admin-basics/domain-admin-basics";
 @Component({
   selector: 'app-dashboard',
 
@@ -62,9 +61,7 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
           class="p-6 bg-green-50 rounded-lg border border-green-200 space-y-6"
         >
           <h2 class="text-xl font-semibold text-green-800">Admin Features</h2>
-          <app-create-user [orgId]="orgId"></app-create-user>
-          <app-task-form></app-task-form>
-          <app-task-list [orgId]="orgId"></app-task-list>
+          <app-create-project [orgId]="orgId" [domainUid]="domainUid"></app-create-project>
         </div>
 
         <!-- User Features -->
@@ -82,18 +79,18 @@ import { CustomButtonsComponent } from "../routechanger/routechanger";
     </div>
   </div> `,
   imports: [
-    CreateUserComponent,
     NgIf,
     TaskListComponent,
-    TaskFormComponent,
     UpdateTaskStatusComponent,
     CustomButtonsComponent,
     CreateDomainComponent,
-    CreateAdminComponent
+    CreateAdminComponent,
+    CreateProjectComponent
 ],
 })
 export class DashboardComponent implements OnInit {
   role: string | null = '';
+  domainUid : string | null ='';
   customization: {
     userAnalytics: boolean;
     orgAnalytics: boolean;
@@ -110,5 +107,6 @@ export class DashboardComponent implements OnInit {
     const buttoninput = this.customization;
     this.orgId = localStorage.getItem('orgId');
     this.uid = localStorage.getItem('uid');
+    this.domainUid = localStorage.getItem('domainUid');
   }
 }

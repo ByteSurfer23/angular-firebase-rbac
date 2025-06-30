@@ -136,6 +136,7 @@ export class CreateAdminComponent implements OnInit {
   orgAnalytics = false;
   auditLog = false;
   message = '';
+  domain='';
 
   domains: { name: string; uid: string; selected: boolean }[] = [];
   selectedDomainUids: string[] = [];
