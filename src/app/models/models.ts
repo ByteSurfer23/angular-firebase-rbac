@@ -23,8 +23,8 @@ export interface AssignedUser {
  */
 export interface ProjectTask {
   description: string; // Description of the task
-  dueDate: Timestamp; // The date the task is due
-  reminderDate: Timestamp; // Optional reminder date for the task
+  dueDate: Timestamp ; // The date the task is due
+  reminderDate: Timestamp | undefined; // Optional reminder date for the task
   createdAt: Timestamp; // The date and time the task was created
   status: 'not yet started' | 'in progress' | 'completed'; // Current status of the task
   assignedTo: AssignedUser[]; // An array of users assigned to this specific task
