@@ -19,7 +19,7 @@ import {
 // Import the interfaces from the new file
 import { ProjectAsset, AssignedUser, ProjectTask, ProjectDocument } from '../models/models'; // Adjusted path
 import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // Adjusted path
-
+import { v4 as uuidv4 } from 'uuid';
 
 @Component({
   selector: 'app-create-project', // Renamed conceptually, but selector remains for consistency
@@ -578,8 +578,9 @@ export class CreateProjectComponent implements OnInit {
     }
 
     const assignedUsers: AssignedUser[] = await this.resolveAssigneeEmails(this.currentTaskAssignedUserEmailInput);
-
+    const newTaskUid = uuidv4();
     const newTask: ProjectTask = {
+      id:newTaskUid,
       description: this.currentTaskDescription,
       dueDate: Timestamp.fromDate(new Date(this.currentTaskDueDate)),
       reminderDate: this.currentTaskReminderDate ? Timestamp.fromDate(new Date(this.currentTaskReminderDate)) : undefined,

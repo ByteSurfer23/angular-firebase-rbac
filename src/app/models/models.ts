@@ -22,6 +22,7 @@ export interface AssignedUser {
  * Represents a single task within a project.
  */
 export interface ProjectTask {
+  id?: string;
   description: string; // Description of the task
   dueDate: Timestamp ; // The date the task is due
   reminderDate: Timestamp | undefined; // Optional reminder date for the task
