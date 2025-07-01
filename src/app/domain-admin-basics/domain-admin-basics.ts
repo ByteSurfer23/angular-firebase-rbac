@@ -1,5 +1,3 @@
-// src/app/create-project/create-project.component.ts
-
 import { Component, Input, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common'; // Added DatePipe for displaying dates
@@ -15,11 +13,11 @@ import {
 } from '@angular/fire/firestore';
 
 // Import the interfaces from the new file
-import { ProjectAsset, AssignedUser, ProjectTask, ProjectDocument } from '../models/models'
+import { ProjectAsset, AssignedUser, ProjectTask, ProjectDocument } from '../models/models' // Assuming models.ts is in the same directory or adjust path
 
 // IMPORTANT: Ensure you have this utility function for audit logging.
 // If not, remove the import and calls, or create a placeholder.
-import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry';
+import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // Assuming auditlogentry.ts is in the same directory or adjust path
 
 
 @Component({
@@ -27,114 +25,164 @@ import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry';
   standalone: true,
   imports: [FormsModule, CommonModule, DatePipe], // Include DatePipe for formatting dates in template
   template: `
-    <form (ngSubmit)="createProject()" class="bg-white shadow-md rounded-xl p-6 max-w-2xl mx-auto space-y-6 mt-8">
-      <h3 class="text-2xl font-bold text-center text-gray-800">Create New Project</h3>
+    <div class="min-h-screen bg-gray-900 text-gray-100 font-inter p-4 sm:p-6 rounded-xl overflow-hidden">
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+      </style>
 
-      <div *ngIf="message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+      <header class="bg-gray-800 p-4 rounded-xl shadow-lg mb-6 text-center">
+        <h1 class="text-3xl font-bold text-blue-400 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 h-8 w-8 text-green-300">
+            <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="M15 6 18 9"/>
+          </svg>
+          Create New Project
+        </h1>
+        <p class="text-sm text-gray-400 mt-2">
+          Organization: <span class="font-semibold text-blue-300">{{ orgId || 'N/A' }}</span> |
+          Domain: <span class="font-semibold text-blue-300">{{ domainUid || 'N/A' }}</span>
+        </p>
+      </header>
+
+      <!-- Messages -->
+      <div *ngIf="message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
         <span class="block sm:inline">{{ message }}</span>
         <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" (click)="message = ''">
-          <svg class="fill-current h-6 w-6 text-green-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <title>Close</title>
-            <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 2.65a1.2 1.2 0 1 1-1.697-1.697L8.303 10l-2.651-2.651a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-2.651a1.2 1.2 0 1 1 1.697 1.697L11.697 10l2.651 2.651a1.2 1.2 0 0 1 0 1.697z" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-green-500">
+            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
           </svg>
         </span>
       </div>
 
-      <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
         <span class="block sm:inline">{{ errorMessage }}</span>
         <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" (click)="errorMessage = ''">
-          <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <title>Close</title>
-            <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 2.65a1.2 1.2 0 1 1-1.697-1.697L8.303 10l-2.651-2.651a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-2.651a1.2 1.2 0 1 1 1.697 1.697L11.697 10l2.651 2.651a1.2 1.2 0 0 1 0 1.697z" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-red-500">
+            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
           </svg>
         </span>
       </div>
 
-      <div>
-        <label for="projectName" class="block text-gray-700 text-sm font-bold mb-2">Project Name:</label>
-        <input type="text" id="projectName" [(ngModel)]="projectName" name="projectName" required
-               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-      </div>
+      <form (ngSubmit)="createProject()" class="bg-gray-800 shadow-md rounded-xl p-6 max-w-2xl mx-auto space-y-6">
+        <h3 class="text-2xl font-bold text-center text-blue-300">Project Details</h3>
 
-      <div>
-        <label for="projectDescription" class="block text-gray-700 text-sm font-bold mb-2">Project Description:</label>
-        <textarea id="projectDescription" [(ngModel)]="projectDescription" name="projectDescription" rows="3"
-                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
-      </div>
-
-      <div class="border p-4 rounded-md">
-        <h4 class="text-lg font-semibold mb-3">Project Assets (Documents/Images)</h4>
-        <div class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mb-2">
-          <input type="text" [(ngModel)]="currentAssetKey" name="currentAssetKey" placeholder="Asset Name (e.g., Design Doc)"
-                 class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow" />
-          <input type="text" [(ngModel)]="currentAssetUrl" name="currentAssetUrl" placeholder="URL to Image/Document"
-                 class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow" />
-          <button type="button" (click)="addAsset()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded whitespace-nowrap">Add Asset</button>
+        <div>
+          <label for="projectName" class="block text-gray-300 text-sm font-bold mb-2">Project Name:</label>
+          <input type="text" id="projectName" [(ngModel)]="projectName" name="projectName" required
+                 class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-        <ul *ngIf="projectAssets.length > 0" class="list-disc pl-5">
-          <li *ngFor="let asset of projectAssets; let i = index">
-            {{ asset.key }}: <a [href]="asset.url" target="_blank" class="text-blue-600 hover:underline break-all">{{ asset.url }}</a>
-            <button type="button" (click)="removeAsset(i)" class="ml-2 text-red-500 hover:text-red-700 text-sm">Remove</button>
-          </li>
-        </ul>
-        <p *ngIf="projectAssets.length === 0" class="text-gray-500 text-sm">No assets added yet.</p>
-      </div>
 
-      <div class="border p-4 rounded-md">
-        <h4 class="text-lg font-semibold mb-3">Users Working on this Project</h4>
-        <div class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mb-2">
-          <input type="email" [(ngModel)]="currentUserEmailInput" name="currentUserEmailInput" placeholder="User Email (e.g., user@example.com)"
-                 class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow" />
-          <button type="button" (click)="addUserToProject()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded whitespace-nowrap">Add User</button>
+        <div>
+          <label for="projectDescription" class="block text-gray-300 text-sm font-bold mb-2">Project Description:</label>
+          <textarea id="projectDescription" [(ngModel)]="projectDescription" name="projectDescription" rows="3"
+                    class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
         </div>
-        <ul *ngIf="usersWorkingOnProject.length > 0" class="list-disc pl-5">
-          <li *ngFor="let user of usersWorkingOnProject; let i = index">
-            {{ user.email }} (UID: {{ user.uid || 'N/A' }})
-            <button type="button" (click)="removeUserFromProject(i)" class="ml-2 text-red-500 hover:text-red-700 text-sm">Remove</button>
-          </li>
-        </ul>
-        <p *ngIf="usersWorkingOnProject.length === 0" class="text-gray-500 text-sm">No users added to this project yet.</p>
-      </div>
 
-      <div class="border p-4 rounded-md">
-        <h4 class="text-lg font-semibold mb-3">Tasks for this Project</h4>
-        <div class="space-y-2">
-          <input type="text" [(ngModel)]="currentTaskDescription" name="currentTaskDescription" placeholder="Task Description"
-                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-          <label for="taskDueDate" class="block text-gray-700 text-sm mb-0">Due Date:</label>
-          <input type="date" id="taskDueDate" [(ngModel)]="currentTaskDueDate" name="currentTaskDueDate" title="Due Date" required
-                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-          <label for="taskReminderDate" class="block text-gray-700 text-sm mb-0">Reminder Date (Optional):</label>
-          <input type="date" id="taskReminderDate" [(ngModel)]="currentTaskReminderDate" name="currentTaskReminderDate" title="Reminder Date"
-                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-          <select [(ngModel)]="currentTaskStatus" name="currentTaskStatus" required
-                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            <option value="not yet started">Not Yet Started</option>
-            <option value="in progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-          <input type="email" [(ngModel)]="currentTaskAssignedUserEmailInput" name="currentTaskAssignedUserEmailInput" placeholder="Assignee Email(s) (comma-separated)"
-                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-          <button type="button" (click)="addTask()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Add Task</button>
+        <div class="border border-gray-700 p-4 rounded-md">
+          <h4 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-green-300">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Project Assets (Documents/Images)
+          </h4>
+          <div class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mb-4">
+            <input type="text" [(ngModel)]="currentAssetKey" name="currentAssetKey" placeholder="Asset Name (e.g., Design Doc)"
+                   class="flex-grow p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="text" [(ngModel)]="currentAssetUrl" name="currentAssetUrl" placeholder="URL to Image/Document"
+                   class="flex-grow p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button type="button" (click)="addAsset()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 whitespace-nowrap">Add Asset</button>
+          </div>
+          <ul *ngIf="projectAssets.length > 0" class="list-disc pl-5 space-y-2">
+            <li *ngFor="let asset of projectAssets; let i = index" class="p-2 border border-gray-700 rounded-md bg-gray-900 flex items-center justify-between">
+              <span class="break-all">{{ asset.key }}: <a [href]="asset.url" target="_blank" class="text-blue-400 hover:underline">{{ asset.url }}</a></span>
+              <button type="button" (click)="removeAsset(i)" class="ml-4 text-red-500 hover:text-red-700 text-sm font-semibold">Remove</button>
+            </li>
+          </ul>
+          <p *ngIf="projectAssets.length === 0" class="text-gray-500 text-sm mt-2">No assets added yet.</p>
         </div>
-        <ul *ngIf="projectTasks.length > 0" class="list-disc pl-5 mt-4">
-          <li *ngFor="let task of projectTasks; let i = index" class="mb-2 p-2 border rounded">
-            <strong>Task:</strong> {{ task.description }}<br>
-            <strong>Status:</strong> {{ task.status | titlecase }}<br>
-            <strong>Due:</strong> {{ task.dueDate.toDate() | date:'mediumDate' }}<br>
-            <strong>Reminder:</strong> {{ task.reminderDate.toDate() | date:'mediumDate' }}<br>
-            <strong>Created:</strong> {{ task.createdAt.toDate() | date:'mediumDate' }}<br>
-            <strong>Assigned To:</strong> {{ getAssignedEmails(task.assignedTo) }} <button type="button" (click)="removeTask(i)" class="ml-2 text-red-500 hover:text-red-700 text-sm">Remove</button>
-          </li>
-        </ul>
-        <p *ngIf="projectTasks.length === 0" class="text-gray-500 text-sm">No tasks added yet.</p>
-      </div>
 
-      <button type="submit"
-              class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition font-bold text-lg">
-        Create Project
-      </button>
-    </form>
+        <div class="border border-gray-700 p-4 rounded-md">
+          <h4 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-green-300">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Users Working on this Project
+          </h4>
+          <div class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mb-4">
+            <input type="email" [(ngModel)]="currentUserEmailInput" name="currentUserEmailInput" placeholder="User Email (e.g., user@example.com)"
+                   class="flex-grow p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button type="button" (click)="addUserToProject()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 whitespace-nowrap">Add User</button>
+          </div>
+          <ul *ngIf="usersWorkingOnProject.length > 0" class="list-disc pl-5 space-y-2">
+            <li *ngFor="let user of usersWorkingOnProject; let i = index" class="p-2 border border-gray-700 rounded-md bg-gray-900 flex items-center justify-between">
+              <span>{{ user.email }} (UID: {{ user.uid || 'N/A' }})</span>
+              <button type="button" (click)="removeUserFromProject(i)" class="ml-4 text-red-500 hover:text-red-700 text-sm font-semibold">Remove</button>
+            </li>
+          </ul>
+          <p *ngIf="usersWorkingOnProject.length === 0" class="text-gray-500 text-sm mt-2">No users added to this project yet.</p>
+        </div>
+
+        <div class="border border-gray-700 p-4 rounded-md">
+          <h4 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-green-300">
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 12h4"/><path d="M8 18h8"/><path d="M16 6H8c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+            </svg>
+            Tasks for this Project
+          </h4>
+          <div class="space-y-4">
+            <div>
+              <label for="currentTaskDescription" class="block text-gray-300 text-sm font-bold mb-2">Task Description:</label>
+              <input type="text" [(ngModel)]="currentTaskDescription" name="currentTaskDescription" placeholder="Task Description" required
+                     class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label for="taskDueDate" class="block text-gray-300 text-sm font-bold mb-2">Due Date:</label>
+              <input type="date" id="taskDueDate" [(ngModel)]="currentTaskDueDate" name="currentTaskDueDate" title="Due Date" required
+                     class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label for="taskReminderDate" class="block text-gray-300 text-sm font-bold mb-2">Reminder Date (Optional):</label>
+              <input type="date" id="taskReminderDate" [(ngModel)]="currentTaskReminderDate" name="currentTaskReminderDate" title="Reminder Date"
+                     class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label for="taskStatus" class="block text-gray-300 text-sm font-bold mb-2">Status:</label>
+              <select [(ngModel)]="currentTaskStatus" name="currentTaskStatus" required id="taskStatus"
+                      class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="not yet started" class="bg-gray-900 text-white">Not Yet Started</option>
+                <option value="in progress" class="bg-gray-900 text-white">In Progress</option>
+                <option value="completed" class="bg-gray-900 text-white">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label for="taskAssignedUserEmailInput" class="block text-gray-300 text-sm font-bold mb-2">Assignee Email(s) (comma-separated):</label>
+              <input type="email" [(ngModel)]="currentTaskAssignedUserEmailInput" name="currentTaskAssignedUserEmailInput" placeholder="Assignee Email(s)"
+                     class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <button type="button" (click)="addTask()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 w-full">Add Task</button>
+          </div>
+          <ul *ngIf="projectTasks.length > 0" class="list-disc pl-5 mt-4 space-y-2">
+            <li *ngFor="let task of projectTasks; let i = index" class="mb-2 p-3 border border-gray-700 rounded-md bg-gray-900">
+              <strong>Task:</strong> {{ task.description }}<br>
+              <strong>Status:</strong> <span [ngClass]="{'text-yellow-400': task.status === 'in progress', 'text-green-400': task.status === 'completed', 'text-gray-400': task.status === 'not yet started'}">{{ task.status | titlecase }}</span><br>
+              <strong>Due:</strong> {{ task.dueDate.toDate() | date:'mediumDate' }}<br>
+              
+              <strong>Created:</strong> {{ task.createdAt.toDate() | date:'mediumDate' }}<br>
+              <strong>Assigned To:</strong> {{ getAssignedEmails(task.assignedTo) }}
+              <button type="button" (click)="removeTask(i)" class="ml-2 text-red-500 hover:text-red-700 text-sm font-semibold">Remove</button>
+            </li>
+          </ul>
+          <p *ngIf="projectTasks.length === 0" class="text-gray-500 text-sm mt-2">No tasks added yet.</p>
+        </div>
+
+        <button type="submit"
+                class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition font-bold text-lg transform hover:scale-105">
+          Create Project
+        </button>
+      </form>
+    </div>
   `,
 })
 export class CreateProjectComponent implements OnInit {

@@ -6,6 +6,7 @@ import { TaskListComponent } from '../task-list/task-list';
 import { UpdateTaskStatusComponent } from '../update-task-status/update-task-status';
 import { CustomButtonsComponent } from "../routechanger/routechanger";
 import { CreateProjectComponent } from "../domain-admin-basics/domain-admin-basics";
+import { UserManagementComponent } from "../domain-admin-usercrud/domain-admin-usercrud";
 @Component({
   selector: 'app-dashboard',
 
@@ -62,6 +63,7 @@ import { CreateProjectComponent } from "../domain-admin-basics/domain-admin-basi
         >
           <h2 class="text-xl font-semibold text-green-800">Admin Features</h2>
           <app-create-project [orgId]="orgId" [domainUid]="domainUid"></app-create-project>
+          <app-user-management></app-user-management>
         </div>
 
         <!-- User Features -->
@@ -85,7 +87,8 @@ import { CreateProjectComponent } from "../domain-admin-basics/domain-admin-basi
     CustomButtonsComponent,
     CreateDomainComponent,
     CreateAdminComponent,
-    CreateProjectComponent
+    CreateProjectComponent,
+    UserManagementComponent
 ],
 })
 export class DashboardComponent implements OnInit {
