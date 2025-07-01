@@ -12,12 +12,13 @@ import {
   query,
   getDoc, // Added to fetch individual user docs
 } from '@angular/fire/firestore';
-// Import UserWithAssetAccess from models.ts instead of AppUser
+// Import UserWithAssetAccess and UserProjectAssignment from models.ts
 import {
   AssignedUser,
   ProjectDocument,
   UserProjectAssetAccess,
   UserWithAssetAccess,
+  UserProjectAssignment // Import UserProjectAssignment
 } from '../models/models';
 // No longer importing AppUser from domain-admin-usercrud.ts
 import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // Import audit log function
@@ -673,12 +674,13 @@ export class ProjectUserAssignerComponent implements OnInit {
         ...this.tempSelectedProjectUsers,
       ];
 
-      // 2. Update each user's fileAccesses array based on userAssetAccessState
+      // 2. Update each user's fileAccesses and projectAssignments arrays based on current state
       for (const user of this.allDomainUsersWithAccess) {
         const userAccessMapForProject = this.userAssetAccessState.get(user.uid);
-        if (!userAccessMapForProject) {
-          continue; // No asset access changes for this user in this project
-        }
+        // We will always update projectAssignments, even if no asset access changes
+        // if (!userAccessMapForProject) {
+        //   continue; // No asset access changes for this user in this project
+        // }
 
         let userDocRef;
         // Try to get user from 'users' collection first
@@ -698,9 +700,10 @@ export class ProjectUserAssignerComponent implements OnInit {
         }
 
         if (userDocSnap.exists()) {
-          // Cast to UserWithAssetAccess to ensure fileAccesses property is available
+          // Cast to UserWithAssetAccess to ensure fileAccesses and projectAssignments properties are available
           const currentFileData = userDocSnap.data() as UserWithAssetAccess;
-          // Ensure fileAccesses is an array, even if it's null/undefined in Firestore
+
+          // --- Handle fileAccesses update ---
           const existingFileAccesses: UserProjectAssetAccess[] = Array.isArray(
             currentFileData.fileAccesses
           )
@@ -708,24 +711,24 @@ export class ProjectUserAssignerComponent implements OnInit {
             : [];
 
           // Filter out old access entries for the current project
-          // This ensures we remove all previous access settings for THIS project before adding new ones.
           const otherProjectsAccess = existingFileAccesses.filter(
             (access) => access.projectId !== this.selectedProject?.uid
           );
 
           // Add new/updated access entries for the current project
           const newProjectAccess: UserProjectAssetAccess[] = [];
-          this.selectedProject.assets.forEach((asset) => {
-            const hasAccess = userAccessMapForProject.get(asset.key) || false;
-            newProjectAccess.push({
-              projectId: this.selectedProject!.uid, // Explicitly set the projectId
-              assetKey: asset.key,
-              hasAccess: hasAccess,
+          if (userAccessMapForProject) { // Only process if userAccessMapForProject exists
+            this.selectedProject.assets.forEach((asset) => {
+              const hasAccess = userAccessMapForProject.get(asset.key) || false;
+              newProjectAccess.push({
+                projectId: this.selectedProject!.uid, // Explicitly set the projectId
+                assetKey: asset.key,
+                hasAccess: hasAccess,
+              });
             });
-          });
+          }
 
           // Combine and filter out `hasAccess: false` entries if you only want to store `true` access
-          // This keeps the Firestore document cleaner by not storing explicit 'false' access.
           const combinedFileAccesses = [
             ...otherProjectsAccess,
             ...newProjectAccess,
@@ -735,11 +738,43 @@ export class ProjectUserAssignerComponent implements OnInit {
             combinedFileAccesses
           );
 
+          // --- Handle projectAssignments update ---
+          const existingProjectAssignments: UserProjectAssignment[] = Array.isArray(
+            currentFileData.projectAssignments
+          )
+            ? currentFileData.projectAssignments
+            : [];
+
+          // Filter out old assignment entries for the current project
+          const otherProjectsAssignments = existingProjectAssignments.filter(
+            (assignment) => assignment.projectId !== this.selectedProject?.uid
+          );
+
+          let updatedProjectAssignments: UserProjectAssignment[] = [...otherProjectsAssignments];
+
+          // If the user is currently assigned to the selected project, add its assignment
+          const isUserAssigned = this.tempSelectedProjectUsers.some(u => u.uid === user.uid);
+          if (isUserAssigned) {
+            // Add a new project assignment entry with an empty taskIds array
+            // This component only handles project assignment, not specific task assignments within it.
+            updatedProjectAssignments.push({
+              projectId: this.selectedProject!.uid,
+              taskIds: []
+            });
+          }
+          console.log(
+            `User ${user.email} - Updated Project Assignments to save:`,
+            updatedProjectAssignments
+          );
+
+
+          // Perform the update for both fileAccesses and projectAssignments
           await updateDoc(userDocRef, {
             fileAccesses: combinedFileAccesses,
+            projectAssignments: updatedProjectAssignments // Save the updated project assignments
           });
           console.log(
-            `Updated asset access for user ${user.email} in project ${this.selectedProject.name}`
+            `Updated asset access and project assignments for user ${user.email} in project ${this.selectedProject.name}`
           );
 
           // Update the local allDomainUsersWithAccess to reflect the saved changes
@@ -747,8 +782,8 @@ export class ProjectUserAssignerComponent implements OnInit {
             (u) => u.uid === user.uid
           );
           if (userIndex > -1) {
-            this.allDomainUsersWithAccess[userIndex].fileAccesses =
-              combinedFileAccesses;
+            this.allDomainUsersWithAccess[userIndex].fileAccesses = combinedFileAccesses;
+            this.allDomainUsersWithAccess[userIndex].projectAssignments = updatedProjectAssignments;
           }
 
           // Audit logging for individual user asset access update
@@ -763,10 +798,10 @@ export class ProjectUserAssignerComponent implements OnInit {
           }
         } else {
           console.warn(
-            `User document not found for UID: ${user.uid}. Cannot update asset access.`
+            `User document not found for UID: ${user.uid}. Cannot update asset access or project assignments.`
           );
           this.showTemporaryMessage(
-            `User ${user.email} not found. Asset access not saved.`,
+            `User ${user.email} not found. Asset access/project assignments not saved.`,
             true
           );
         }
@@ -791,6 +826,7 @@ export class ProjectUserAssignerComponent implements OnInit {
           this.expandedUserAssetAccess.clear();
         }
       }
+
 
       // Audit logging for overall project user assignment
       if (this.adminUid && this.selectedProject?.uid) {

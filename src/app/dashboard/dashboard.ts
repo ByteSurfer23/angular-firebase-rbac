@@ -5,11 +5,11 @@ import { CreateAdminComponent } from '../create-admin/create-admin';
 import { CreateDomainComponent } from '../create-domain/create-domain';
 import { CommonModule, NgIf } from '@angular/common'; // CommonModule is correctly imported here
 import { TaskListComponent } from '../task-list/task-list';
-import { UpdateTaskStatusComponent } from '../update-task-status/update-task-status';
 import { CustomButtonsComponent } from '../routechanger/routechanger';
 import { CreateProjectComponent } from '../domain-admin-basics/domain-admin-basics'; // Assuming this path is correct for your 'Project & Task Management' component
 import { UserManagementComponent } from '../domain-admin-usercrud/domain-admin-usercrud';
 import { ProjectUserAssignerComponent } from '../assignuserproject/assignuserproject';
+import { UserDashboardComponent } from "../userpanel/userpanel";
 
 @Component({
   selector: 'app-dashboard',
@@ -17,7 +17,6 @@ import { ProjectUserAssignerComponent } from '../assignuserproject/assignuserpro
   imports: [
     NgIf,
     TaskListComponent,
-    UpdateTaskStatusComponent,
     CustomButtonsComponent,
     CreateDomainComponent,
     CreateAdminComponent,
@@ -25,7 +24,8 @@ import { ProjectUserAssignerComponent } from '../assignuserproject/assignuserpro
     UserManagementComponent,
     CommonModule, // This provides DatePipe to all components within this module's scope
     ProjectUserAssignerComponent,
-  ],
+    UserDashboardComponent
+],
   template: `
     <div class="min-h-screen bg-gray-100 py-10 px-4 sm:px-6 lg:px-8 font-inter">
       <style>
@@ -192,10 +192,7 @@ import { ProjectUserAssignerComponent } from '../assignuserproject/assignuserpro
               Your Assigned Tasks
             </h2>
             <div class="bg-yellow-100 p-6 rounded-lg shadow-inner">
-              <app-update-task-status
-                [orgId]="orgId"
-                [userId]="uid"
-              ></app-update-task-status>
+              <app-user-dashboard></app-user-dashboard>
             </div>
           </div>
         </div>

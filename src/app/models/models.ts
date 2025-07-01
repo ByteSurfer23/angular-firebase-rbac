@@ -14,8 +14,13 @@ export interface UserWithAssetAccess {
   uid: string;
   email: string;
   fileAccesses: UserProjectAssetAccess[];
+  projectAssignments: UserProjectAssignment[]; // Added this property
 }
-
+export interface UserProjectAssignment {
+  projectId: string;
+  taskIds: string[]; // An array of task UIDs within that project the user is assigned to.
+                      // For this component, it will be an empty array if only project assignment is handled.
+}
 /**
  * Represents a user assigned to a project or a task within a project.
  */
@@ -38,7 +43,7 @@ export interface UserProjectAssetAccess {
  * Represents a single task within a project.
  */
 export interface ProjectTask {
-  id?: string;
+  id: string;
   description: string; // Description of the task
   dueDate: Timestamp ; // The date the task is due
   reminderDate: Timestamp | undefined; // Optional reminder date for the task
