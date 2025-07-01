@@ -10,6 +10,12 @@ export interface ProjectAsset {
   url: string; // URL to the hosted image or document
 }
 
+export interface UserWithAssetAccess {
+  uid: string;
+  email: string;
+  fileAccesses: UserProjectAssetAccess[];
+}
+
 /**
  * Represents a user assigned to a project or a task within a project.
  */
@@ -18,6 +24,16 @@ export interface AssignedUser {
   email: string; // The email address of the user
 }
 
+export interface UserAssignedTask {
+  projectId: string;
+  taskId: string;
+}
+
+export interface UserProjectAssetAccess {
+  projectId: string;
+  assetKey: string;
+  hasAccess: boolean;
+}
 /**
  * Represents a single task within a project.
  */

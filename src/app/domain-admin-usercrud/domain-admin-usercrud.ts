@@ -43,7 +43,7 @@ interface UserCustomization {
   userAnalytics: boolean;
 }
 
-interface AppUser {
+export interface AppUser {
   uid: string;
   name: string;
   email: string;
