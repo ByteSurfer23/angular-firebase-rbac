@@ -1,4 +1,3 @@
-// login.component.ts
 import { Component } from '@angular/core';
 import { Auth, signInWithEmailAndPassword } from '@angular/fire/auth';
 import {
@@ -18,19 +17,39 @@ import { CommonModule } from '@angular/common'; // Added for *ngIf directive
   imports: [FormsModule, CommonModule], // Ensure CommonModule is imported for *ngIf
   template: `
     <div
-      class="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6"
+      class="min-h-screen flex flex-col items-center justify-center bg-gray-950 p-6 font-inter"
     >
+      <style>
+        /* Import Inter font for a modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Simple spinner animation for loading state */
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .spinner {
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top: 2px solid #fff;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          animation: spin 1s linear infinite;
+        }
+      </style>
+
       <form
         (ngSubmit)="login()"
-        class="bg-white p-6 rounded-xl shadow-md w-full max-w-md space-y-4"
+        class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md space-y-6 border border-gray-700"
       >
-        <h2 class="text-xl font-semibold text-center text-gray-800">Login</h2>
+        <h2 class="text-3xl font-bold text-center text-blue-400">Login</h2>
         <input
           [(ngModel)]="email"
           name="email"
           placeholder="Email"
           required
-          class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           [(ngModel)]="password"
@@ -38,22 +57,27 @@ import { CommonModule } from '@angular/common'; // Added for *ngIf directive
           type="password"
           placeholder="Password"
           required
-          class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="submit"
-          class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+          [disabled]="loading"
+          class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          Login
+          <span *ngIf="!loading">Login</span>
+          <span *ngIf="loading" class="flex items-center">
+            <div class="spinner mr-2"></div>
+            Logging in...
+          </span>
         </button>
-        <div *ngIf="errorMessage" class="text-red-500 text-sm text-center">
+        <div *ngIf="errorMessage" class="text-red-400 text-sm text-center p-2 bg-red-900 bg-opacity-30 rounded-md">
           {{ errorMessage }}
         </div>
       </form>
 
       <button
         (click)="goToSignup()"
-        class="mt-4 text-blue-600 hover:text-blue-800 font-medium transition"
+        class="mt-6 text-blue-400 hover:text-blue-300 font-medium transition duration-200 ease-in-out transform hover:scale-105"
       >
         Create New Organization
       </button>
@@ -64,6 +88,7 @@ export class LoginComponent {
   email = '';
   password = '';
   errorMessage: string | null = null; // For displaying login errors
+  loading: boolean = false; // Added for loading state
 
   constructor(
     private auth: Auth,
@@ -72,6 +97,7 @@ export class LoginComponent {
   ) {}
 
   async login() {
+    this.loading = true; // Set loading to true on login attempt
     let role = '';
     let customization: any = null; // Can be an object or null
     let orgId = '';
@@ -232,6 +258,8 @@ export class LoginComponent {
       } else {
         this.errorMessage = 'Login failed. Please try again.';
       }
+    } finally {
+      this.loading = false; // Always set loading to false after attempt
     }
   }
 
