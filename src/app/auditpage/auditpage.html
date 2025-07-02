@@ -1,44 +1,44 @@
 <!-- src/app/audit-log-viewer/audit-log-viewer.component.html -->
 
-<div class="container mx-auto p-6 bg-white rounded-lg shadow-xl my-8">
-  <h1 class="text-3xl font-extrabold text-center text-gray-900 mb-8">Audit Logs</h1>
+<div class="container mx-auto p-6 bg-gray-800 rounded-xl shadow-lg my-8 border border-gray-700">
+  <h1 class="text-3xl font-extrabold text-center text-gray-100 mb-8">Audit Logs</h1>
 
   <!-- Loading Indicator -->
   <div *ngIf="isLoading" class="text-center p-4">
-    <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-200 mx-auto"></div>
-    <p class="mt-4 text-gray-600">Loading audit log entries...</p>
+    <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-600 mx-auto"></div>
+    <p class="mt-4 text-gray-300">Loading audit log entries...</p>
   </div>
 
   <!-- Error Message -->
-  <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+  <div *ngIf="errorMessage" class="bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
     <strong class="font-bold">Error!</strong>
     <span class="block sm:inline ml-2">{{ errorMessage }}</span>
   </div>
 
   <!-- Audit Logs Table -->
   <div *ngIf="!isLoading && auditLogs.length > 0" class="overflow-x-auto">
-    <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <thead class="bg-gray-100">
+    <table class="min-w-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+      <thead class="bg-gray-700">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Timestamp (IST)</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actor UID</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Resource</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Timestamp (IST)</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Action</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actor UID</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Resource</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
           <!-- Add more columns if 'details' or other fields are consistently available and important to display -->
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200">
-        <tr *ngFor="let log of auditLogs" class="hover:bg-gray-50">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-mono">{{ log.timestampIST }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ log.action }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-mono">{{ log.actorUid }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ log.resource }}</td>
+      <tbody class="divide-y divide-gray-700">
+        <tr *ngFor="let log of auditLogs" class="hover:bg-gray-700">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200 font-mono">{{ log.timestampIST }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200">{{ log.action }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200 font-mono">{{ log.actorUid }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200">{{ log.resource }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">
             <span [ngClass]="{
-              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800': log.status === 'success',
-              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800': log.status === 'failed',
-              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800': log.status === 'no_data'
+              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-700 text-green-100': log.status === 'success',
+              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-700 text-red-100': log.status === 'failed',
+              'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-700 text-yellow-100': log.status === 'no_data'
             }">
               {{ log.status }}
             </span>
@@ -49,7 +49,7 @@
   </div>
 
   <!-- No Logs Found Message -->
-  <div *ngIf="!isLoading && auditLogs.length === 0 && !errorMessage" class="text-center text-gray-500 p-6">
+  <div *ngIf="!isLoading && auditLogs.length === 0 && !errorMessage" class="text-center text-gray-400 p-6">
     <p class="text-lg">No audit logs found for this organization.</p>
     <p class="text-sm mt-2">Ensure your `orgId` is correctly set in `localStorage` and audit actions are being logged.</p>
   </div>
