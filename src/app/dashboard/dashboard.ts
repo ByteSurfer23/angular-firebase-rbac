@@ -3,8 +3,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CreateAdminComponent } from '../create-admin/create-admin';
 import { CreateDomainComponent } from '../create-domain/create-domain';
-import { CommonModule, NgIf } from '@angular/common'; // CommonModule is correctly imported here
-import { TaskListComponent } from '../task-list/task-list';
+import { CommonModule, NgIf } from '@angular/common'; // CommonModule is correctly imported her
 import { CustomButtonsComponent } from '../routechanger/routechanger';
 import { CreateProjectComponent } from '../domain-admin-basics/domain-admin-basics'; // Assuming this path is correct for your 'Project & Task Management' component
 import { UserManagementComponent } from '../domain-admin-usercrud/domain-admin-usercrud';
@@ -16,7 +15,6 @@ import { UserDashboardComponent } from "../userpanel/userpanel";
   standalone: true,
   imports: [
     NgIf,
-    TaskListComponent,
     CustomButtonsComponent,
     CreateDomainComponent,
     CreateAdminComponent,
@@ -149,8 +147,7 @@ import { UserDashboardComponent } from "../userpanel/userpanel";
             <div class="bg-blue-100 p-6 rounded-lg shadow-inner">
               <h3 class="text-xl font-semibold text-blue-700 mb-4">
                 View All Tasks (Root Scope)
-              </h3>
-              <app-task-list [orgId]="orgId"></app-task-list>
+            </h3>
             </div>
           </div>
 
