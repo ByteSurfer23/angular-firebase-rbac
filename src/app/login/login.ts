@@ -1,3 +1,5 @@
+// src/app/login/login.component.ts
+
 import { Component } from '@angular/core';
 import { Auth, signInWithEmailAndPassword } from '@angular/fire/auth';
 import {
@@ -9,12 +11,12 @@ import {
 } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common'; // Added for *ngIf directive
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, CommonModule], // Ensure CommonModule is imported for *ngIf
+  imports: [FormsModule, CommonModule],
   template: `
     <div
       class="min-h-screen flex flex-col items-center justify-center bg-gray-950 p-6 font-inter"
@@ -87,8 +89,8 @@ import { CommonModule } from '@angular/common'; // Added for *ngIf directive
 export class LoginComponent {
   email = '';
   password = '';
-  errorMessage: string | null = null; // For displaying login errors
-  loading: boolean = false; // Added for loading state
+  errorMessage: string | null = null;
+  loading: boolean = false;
 
   constructor(
     private auth: Auth,
@@ -97,14 +99,17 @@ export class LoginComponent {
   ) {}
 
   async login() {
-    this.loading = true; // Set loading to true on login attempt
+    this.loading = true;
     let role = '';
-    let customization: any = null; // Can be an object or null
+    let customization: any = null;
     let orgId = '';
-    let userFoundInFirestore = false; // Flag to indicate if user data is found in Firestore
+    let userFoundInFirestore = false;
     let domainid = '';
     let useremail: string | null = '';
-    this.errorMessage = null; // Clear any previous error messages
+    let userDepartment: string | null = null; // Declare the variable here
+
+    this.errorMessage = null;
+
     try {
       const userCred = await signInWithEmailAndPassword(
         this.auth,
@@ -114,7 +119,8 @@ export class LoginComponent {
       console.log('Firebase Auth User:', userCred.user);
       const uid = userCred.user.uid;
       useremail = this.email;
-      // Step 1: Try to find the user as a 'root' admin (UNTOUCHED)
+
+      // Step 1: Try to find the user as a 'root' admin
       const orgsSnap = await getDocs(
         collection(this.firestore, 'organizations')
       );
@@ -134,64 +140,49 @@ export class LoginComponent {
           customization = rootAdminSnap.data()?.['customization'] || {};
           orgId = orgDoc.id;
           userFoundInFirestore = true;
-          break; // Root user found, no need to check further
+          userDepartment = 'Root Admin'; // Assign a department for root if needed in dashboard
+          break;
         }
       }
 
       // Step 2: If not a 'root' user, proceed to check the domain-nested structure
-      // (Admin or Regular User within a Domain)
       if (!userFoundInFirestore) {
-        // --- MODIFIED DOMAIN EXTRACTION LOGIC ---
         let emailParts = this.email.split('@');
-        let localPart = emailParts[0]; // e.g., "xyz.yourdomainname"
-        let emailHost = emailParts[1]; // e.g., "gmail.com"
-        let userDomain = '';
+        let localPart = emailParts[0];
+        let emailHost = emailParts[1];
+        let userDomain = ''; // This will hold the extracted domain name
 
-        // List of common public email providers. Add more as needed.
         const commonProviders = [
-          'gmail.com',
-          'outlook.com',
-          'yahoo.com',
-          'hotmail.com',
-          'aol.com',
-          'protonmail.com',
+          'gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com',
+          'aol.com', 'protonmail.com',
         ];
 
         if (commonProviders.includes(emailHost)) {
-          // If it's a common provider, we look for the "yourdomainname" inside the local part
-          const localNameParts = localPart.split('.'); // e.g., ["xyz", "yourdomainname"]
+          const localNameParts = localPart.split('.');
           if (localNameParts.length >= 2) {
-            // If the format is 'something.yourdomainname@provider.com',
-            // 'yourdomainname' is the last segment of the local part.
             userDomain = localNameParts[localNameParts.length - 1];
           } else {
-            // If no dot in local part (e.g., "username@gmail.com"), it doesn't fit the custom domain pattern.
             userDomain = '';
           }
         } else {
-          // If it's not a common provider (e.g., user@yourcompany.com), the host itself is the domain.
           userDomain = emailHost;
         }
-        // --- END MODIFIED DOMAIN EXTRACTION LOGIC ---
 
         if (userDomain) {
-          // Only proceed if a userDomain was successfully extracted
           for (const orgDoc of orgsSnap.docs) {
-            // If a user was found in a previous orgDoc iteration as admin/user, stop searching
             if (userFoundInFirestore) break;
 
-            orgId = orgDoc.id; // Set current organization ID
+            orgId = orgDoc.id;
             const orgData = orgDoc.data();
-            // Retrieve the 'domains' map from the organization document
             const domainsMap: { [key: string]: string } =
               orgData?.['domains'] || {};
 
-            // Find the domain UID associated with the extracted userDomain name
             const domainUid = domainsMap[userDomain];
 
             if (domainUid) {
-              // Check for user in the 'admins' subcollection of this specific domain
               domainid = domainUid;
+
+              // Check for admin role within this domain
               const adminRef = doc(
                 this.firestore,
                 `organizations/${orgId}/domain/${domainUid}/admins/${uid}`
@@ -205,10 +196,11 @@ export class LoginComponent {
                 role = 'admin';
                 customization = adminSnap.data()?.['customization'] || {};
                 userFoundInFirestore = true;
-                break; // Admin found for this domain, stop searching
+                userDepartment = userDomain; // Set userDepartment to the extracted domain name
+                break;
               }
 
-              // If not found as an admin, check for user in the 'users' subcollection of this specific domain
+              // If not found as an admin, check for user role within this domain
               if (!userFoundInFirestore) {
                 const userRef = doc(
                   this.firestore,
@@ -220,7 +212,8 @@ export class LoginComponent {
                   role = 'user';
                   customization = userSnap.data()?.['customization'] || {};
                   userFoundInFirestore = true;
-                  break; // Regular user found for this domain, stop searching
+                  userDepartment = userDomain; // Set userDepartment to the extracted domain name
+                  break;
                 }
               }
             }
@@ -240,7 +233,15 @@ export class LoginComponent {
       localStorage.setItem('orgId', orgId);
       localStorage.setItem('uid', uid);
       localStorage.setItem('domainUid', domainid);
-      localStorage.setItem('useremail', useremail);
+      localStorage.setItem('useremail', useremail || '');
+
+      // Store userDepartment in localStorage
+      if (userDepartment) {
+          localStorage.setItem('userDepartment', userDepartment);
+      } else {
+          // If no specific domain department is found (e.g., for root user), clear it
+          localStorage.removeItem('userDepartment');
+      }
 
       // Navigate to dashboard
       this.router.navigate(['/dashboard']);
@@ -254,12 +255,12 @@ export class LoginComponent {
       ) {
         this.errorMessage = 'Invalid email or password.';
       } else if (err.message) {
-        this.errorMessage = err.message; // Display specific error from custom throws
+        this.errorMessage = err.message;
       } else {
         this.errorMessage = 'Login failed. Please try again.';
       }
     } finally {
-      this.loading = false; // Always set loading to false after attempt
+      this.loading = false;
     }
   }
 
