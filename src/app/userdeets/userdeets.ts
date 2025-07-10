@@ -91,15 +91,15 @@ import { AssignedUser, ProjectDocument, ProjectTask } from '../models/models';
         </button>
       </div>
 
-      <main class=" rounded-xl shadow-lg space-y-10">
+      <main class=" rounded-xl space-y-10">
         <!-- General Loader for main operations -->
         <div *ngIf="loading && !selectedUserForAnalytics" class="flex justify-center items-center py-8">
           <div class="loader-spinner mr-3"></div>
           <span class="text-gray-600 font-medium">Loading data...</span>
         </div>
 
-        <section *ngIf="userRole === 'root' && !loading" class="animate-slide-in-fade p-6 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-inner space-y-6">
-          <h3 class="text-2xl font-bold text-custom-gradient text-center">Root User: Search User by UID in any Domain</h3>
+        <section *ngIf="userRole === 'root' && !loading" class="animate-slide-in-fade p-6 space-y-6">
+          <h3 class="text-2xl font-bold text-custom-gradient text-center">Search User by UID in any Domain</h3>
           <div>
             <label for="searchDomainUid" class="block text-gray-700 text-sm font-medium mb-2">Domain ID:</label>
             <input type="text" id="searchDomainUid" [(ngModel)]="searchDomainUid" name="searchDomainUid" placeholder="Enter Domain UID (e.g., domain123)" required
@@ -122,11 +122,11 @@ import { AssignedUser, ProjectDocument, ProjectTask } from '../models/models';
           </button>
 
           <div *ngIf="foundUser" class="mt-6 p-6 bg-white rounded-lg border-2 border-gray-300 shadow-md animate-slide-in-fade">
-            <h4 class="text-xl font-bold text-green-600 mb-3">User Details:</h4>
+            <h4 class="text-xl font-bold text-green-600 mb-3 text-custom-gradient">User Details:</h4>
             <p class="text-gray-700 mb-1"><strong>UID:</strong> <span class="break-all font-mono text-gray-800">{{ foundUser.uid }}</span></p>
             <p class="text-gray-700"><strong>Email:</strong> <span class="break-all font-mono text-gray-800">{{ foundUser.email }}</span></p>
             <button (click)="selectUserForAnalytics(foundUser, true)"
-                    class="mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-5 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    class="mt-6 bg-custom-gradient text-white font-bold py-2.5 px-5 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
               Show User Analytics
             </button>
           </div>

@@ -24,6 +24,7 @@ import { ItDashboardComponent } from '../domain-components/it-component';
 import { FinanceDashboardComponent } from '../domain-components/finance-component';
 import { Orgstats } from '../orgstats/orgstats';
 import { AuditLogViewerComponent } from '../auditpage/auditpage';
+import { SignOutButtonComponent } from "../signout/signout";
 
 @Component({
   selector: 'app-dashboard',
@@ -44,7 +45,8 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
     TitleCasePipe,
     Orgstats,
     AuditLogViewerComponent,
-  ],
+    SignOutButtonComponent
+],
   template: `
     <div
       class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 font-poppins text-gray-800"
@@ -242,6 +244,18 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
             >
               Audit Log
             </button>
+
+                        <button
+              (click)="onNavigateToSection('signOut')"
+              [class.bg-gray-200]="activeSection === 'signOut'"
+              [class.text-custom-gradient]="activeSection === 'signOut'"
+              [class.border-b-2]="activeSection === 'signOut'"
+              [class.border-pink-500]="activeSection === 'signOut'"
+              class="py-2 px-5 rounded-md font-semibold text-gray-700 hover:bg-gray-200 hover:text-blue-600
+                     transition duration-200 ease-in-out transform hover:scale-105"
+            >
+              Sign Out
+            </button>
           </nav>
         </div>
         <!-- END INLINED NAVBAR -->
@@ -379,36 +393,26 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
 
           <div
             *ngIf="role === 'admin' && activeSection === 'admin'"
-            class="p-8 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-md space-y-8 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+            class="p-8 shadow-md space-y-8 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
           >
-            <h2 class="text-2xl font-bold text-custom-gradient text-center">
-              Domain Administrator Features
-            </h2>
             <div class="space-y-6">
               <div
                 class="bg-white p-6 rounded-lg shadow-inner border-2 border-gray-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
               >
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">
-                  Manage Users
-                </h3>
                 <app-user-management></app-user-management>
               </div>
               <div
                 class="bg-white p-6 rounded-lg shadow-inner border-2 border-gray-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
               >
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">
-                  Manage Projects & Tasks
-                </h3>
                 <app-create-project
                   [orgId]="orgId"
                   [domainUid]="domainUid"
                 ></app-create-project>
               </div>
               <div
-                class="bg-white p-6 rounded-lg shadow-inner border-2 border-gray-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+                class="bg-white transition duration-300 ease-in-out transform hover:-translate-y-0.5"
               >
                 <h3 class="text-xl font-semibold text-gray-700 mb-4">
-                  Assign Users to Projects & Assets
                 </h3>
                 <app-project-user-assigner></app-project-user-assigner>
               </div>
@@ -417,11 +421,8 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
 
           <div
             *ngIf="role === 'user' && activeSection === 'user'"
-            class="p-8 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-md space-y-8 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+            class="p-8 space-y-8 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
           >
-            <h2 class="text-2xl font-bold text-custom-gradient text-center">
-              Your Assigned Tasks
-            </h2>
             <div
               class="bg-white p-6 rounded-lg shadow-inner border-2 border-gray-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
             >
@@ -462,16 +463,6 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
         </div>
 
         <div
-          *ngIf="activeSection === 'orgAnalytics'"
-          class="p-8 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-md space-y-4 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
-        >
-          <h2 class="text-2xl font-bold text-custom-gradient text-center">
-            Organization Analytics Dashboard
-          </h2>
-          <app-task-analytics></app-task-analytics>
-        </div>
-
-        <div
           *ngIf="activeSection === 'auditLog'"
           class="p-8 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-md space-y-4 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
         >
@@ -479,6 +470,16 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
             Audit Log
           </h2>
           <app-audit-log-viewer></app-audit-log-viewer>
+        </div>
+
+        <div
+          *ngIf="activeSection === 'signOut'"
+          class="p-8 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-md space-y-4 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+        >
+          <h2 class="text-2xl font-bold text-custom-gradient text-center">
+            Sign Out
+          </h2>
+          <app-sign-out-button></app-sign-out-button>
         </div>
       </div>
     </div>

@@ -159,15 +159,6 @@ import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // En
           <span>Enable User Analytics</span>
         </label>
         <label class="flex items-center space-x-2 cursor-pointer">
-          <input
-            type="checkbox"
-            [(ngModel)]="orgAnalytics"
-            name="orgAnalytics"
-            class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-          />
-          <span>Enable Org Analytics</span>
-        </label>
-        <label class="flex items-center space-x-2 cursor-pointer">
           <input type="checkbox" [(ngModel)]="auditLog" name="auditLog"
                  class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
           <span>Enable Audit Log</span>

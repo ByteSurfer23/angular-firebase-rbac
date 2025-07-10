@@ -72,12 +72,6 @@ async function logAuditActionWithSetDoc(
         </div>
         <div>
           <label class="flex items-center space-x-2">
-            <input type="checkbox" [(ngModel)]="orgAnalytics" name="orgAnalytics" />
-            <span>Org Analytics</span>
-          </label>
-        </div>
-        <div>
-          <label class="flex items-center space-x-2">
             <input type="checkbox" [(ngModel)]="auditLog" name="auditLog" />
             <span>Audit Log</span>
           </label>

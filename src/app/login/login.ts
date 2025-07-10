@@ -80,9 +80,9 @@ import { CommonModule, NgIf } from '@angular/common'; // Ensure NgIf is imported
 
       <form
         (ngSubmit)="login()"
-        class="bg-white pt-4 pb-8 px-8 rounded-lg shadow-xl w-full max-w-md border-2 border-gray-300 space-y-8 animate-slide-in-fade"
+        class="pt-4 pb-8 px-8 rounded-lg shadow-xl w-full max-w-md border-2 border-gray-300 space-y-5 animate-slide-in-fade"
       >
-        <h2 class="text-3xl font-bold text-center text-custom-gradient -mt-2 mb-6">Login</h2> <!-- Adjusted margin for higher position -->
+        <h2 class="text-3xl font-bold text-center text-custom-gradient py-4">Login</h2> <!-- Adjusted margin for higher position -->
         
         <!-- Input Fields -->
         <div class="space-y-5">

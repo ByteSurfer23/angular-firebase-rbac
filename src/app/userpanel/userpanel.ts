@@ -26,195 +26,251 @@ import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // Im
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe, TitleCasePipe], // Add DatePipe and TitleCasePipe
   template: `
-    <div class="min-h-screen bg-gray-900 text-gray-100 font-inter p-4 sm:p-6 rounded-xl overflow-hidden">
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+  <div class="min-h-screen bg-gray-50 text-gray-800 font-poppins p-4 sm:p-6 rounded-xl overflow-hidden">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
 
-        /* Custom Scrollbar for dark theme */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1f2937; /* gray-800 */
-            border-radius: 44px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #4b5563; /* gray-600 */
-            border-radius: 4px;
-            border: 2px solid #1f2937; /* gray-800 */
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #6b7280; /* gray-500 */
-        }
-        /* Tab styling */
-        .tab-button {
-          padding: 0.75rem 1.25rem;
-          border-radius: 0.5rem 0.5rem 0 0;
-          background-color: #1f2937; /* gray-800 */
-          color: #9ca3af; /* gray-400 */
-          font-weight: 600;
-          transition: all 0.2s ease-in-out;
-          border-bottom: 2px solid transparent;
-          cursor: pointer; /* Indicate clickable */
-        }
-        .tab-button.active {
-          background-color: #374151; /* gray-700 */
-          color: #e5e7eb; /* gray-100 */
-          border-color: #6366f1; /* indigo-500 */
-        }
-        .tab-button:hover:not(.active) {
-          background-color: #374151; /* gray-700 */
-          color: #e5e7eb; /* gray-100 */
-        }
-        .tab-content {
-          background-color: #374151; /* gray-700 */
-          border-radius: 0 0.5rem 0.5rem 0.5rem;
-          padding: 1.5rem;
-          min-height: 200px;
-        }
-      </style>
+    /* Custom Scrollbar for light theme */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+      border-radius: 4px;
+    }
 
-      <header class="bg-gray-800 p-4 rounded-xl shadow-lg mb-6 text-center">
-        <h1 class="text-3xl font-bold text-blue-400 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 h-8 w-8 text-green-300">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-          </svg>
-          User Dashboard
-        </h1>
-        <p class="text-sm text-gray-400 mt-2">
-          Welcome, <span class="font-semibold text-blue-300">{{ currentUser?.email || 'User' }}</span>!
-        </p>
-        <p class="text-xs text-gray-500 mt-1">
-          Org: {{ orgId || 'N/A' }} | Domain: {{ domainUid || 'N/A' }} | UID: {{ uid || 'N/A' }}
-        </p>
-      </header>
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #e5e7eb; /* gray-200 */
+      border-radius: 4px;
+    }
 
-      <!-- Messages -->
-      <div *ngIf="message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-        <span class="block sm:inline">{{ message }}</span>
-        <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" (click)="message = ''">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-green-500">
-            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-          </svg>
-        </span>
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #9ca3af; /* gray-400 */
+      border-radius: 4px;
+      border: 2px solid #e5e7eb; /* gray-200 */
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background-color: #6b7280; /* gray-500 */
+    }
+
+    /* Subtle glow for focus */
+    .input-focus-glow:focus {
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5); /* Blue glow */
+      outline: none;
+    }
+
+    /* Card Entry Animation */
+    @keyframes slide-in-fade {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-in-fade {
+      animation: slide-in-fade 0.6s ease-out forwards;
+    }
+
+    /* Custom Spinner Animation for Light Background */
+    @keyframes spin-loader {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loader-spinner {
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-top: 3px solid #FF1493; /* Hot Pink */
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin-loader 1s linear infinite;
+    }
+
+    /* --- CUSTOM GRADIENT STYLES (Yellow & Hot Pink) --- */
+    .text-custom-gradient {
+        background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+        display: inline-block;
+    }
+
+    .bg-custom-gradient {
+        background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+    }
+
+    /* Tab styling */
+    .tab-button {
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem 0.5rem 0 0;
+      background-color: #e5e7eb; /* gray-200 */
+      color: #6b7280; /* gray-500 */
+      font-weight: 600;
+      transition: all 0.2s ease-in-out;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; /* Indicate clickable */
+      border-top: 1px solid #d1d5db; /* gray-300 */
+      border-left: 1px solid #d1d5db; /* gray-300 */
+      border-right: 1px solid #d1d5db; /* gray-300 */
+    }
+    .tab-button.active {
+      background-color: #ffffff; /* white */
+      color: #1f2937; /* gray-900 */
+      border-color: #FF1493; /* Hot Pink */
+      border-bottom-color: transparent; /* Hide bottom border when active */
+    }
+    .tab-button:hover:not(.active) {
+      background-color: #d1d5db; /* gray-300 */
+      color: #374151; /* gray-700 */
+    }
+    .tab-content {
+      background-color: #ffffff; /* white */
+      border-radius: 0 0.5rem 0.5rem 0.5rem;
+      padding: 1.5rem;
+      min-height: 200px;
+      border: 2px solid #d1d5db; /* gray-300 */
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* subtle shadow */
+    }
+  </style>
+
+  <header class="bg-white p-6 rounded-xl shadow-lg mb-6 text-center border-2 border-gray-300 animate-slide-in-fade">
+    <h1 class="text-4xl font-extrabold text-custom-gradient flex items-center justify-center">
+      User Dashboard
+    </h1>
+    <p class="text-lg text-gray-600 mt-3">
+      Welcome, <strong class="font-semibold text-blue-600">{{ currentUser?.email || 'User' }}</strong>!
+    </p>
+    <p class="text-sm text-gray-500 mt-1">
+      Org: <span class="font-semibold text-blue-600">{{ orgId || 'N/A' }}</span> | Domain: <span class="font-semibold text-pink-600">{{ domainUid || 'N/A' }}</span> | UID: <span class="font-semibold text-gray-700">{{ uid || 'N/A' }}</span>
+    </p>
+  </header>
+
+  <!-- Messages -->
+  <div *ngIf="message" class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded relative mb-4 shadow-md" role="alert">
+    <span class="block sm:inline font-medium">{{ message }}</span>
+    <button type="button" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-green-600 hover:text-green-800" (click)="message = ''">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+        <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+      </svg>
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded relative mb-4 shadow-md" role="alert">
+    <span class="block sm:inline font-medium">{{ errorMessage }}</span>
+    <button type="button" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-red-600 hover:text-red-800" (click)="errorMessage = ''">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+        <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+      </svg>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center items-center py-8">
+    <div class="loader-spinner mr-3"></div>
+    <span class="text-gray-600 font-medium">Loading user data...</span>
+  </div>
+  <div *ngIf="!loading && !currentUser && !errorMessage" class="text-yellow-700 text-center text-lg mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-md shadow-md">
+    User data not found or not logged in. Please ensure you are logged in.
+  </div>
+
+  <main *ngIf="currentUser && !loading" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- My Accessible Files Section -->
+    <section class="bg-gray-100 p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade">
+      <h2 class="text-2xl font-bold text-blue-600 mb-4 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-6 w-6 text-yellow-500">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="10" y2="9"/>
+        </svg>
+        My Accessible Files (for selected project)
+      </h2>
+      <div *ngIf="filteredAccessibleFiles.length > 0" class="overflow-y-auto max-h-60 custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md">
+        <ul class="space-y-3 p-3">
+          <li *ngFor="let file of filteredAccessibleFiles" class="bg-white p-3 rounded-md flex items-center justify-between border border-gray-200 shadow-sm hover:bg-gray-50 transition duration-150 ease-in-out">
+            <span class="font-medium text-gray-800">{{ file.assetKey }}</span>
+            <a [href]="file.url" target="_blank" class="text-blue-600 hover:underline flex items-center text-sm transition duration-150 ease-in-out transform hover:scale-105">
+              Access File
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </li>
+        </ul>
       </div>
+      <p *ngIf="filteredAccessibleFiles.length === 0" class="text-gray-600 text-center py-4 bg-gray-50 border border-gray-200 rounded-md shadow-sm mt-4">
+        No files currently accessible to you for the selected project.
+      </p>
+    </section>
 
-      <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-        <span class="block sm:inline">{{ errorMessage }}</span>
-        <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" (click)="errorMessage = ''">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-red-500">
-            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-          </svg>
-        </span>
-      </div>
+    <!-- My Projects & Tasks Section -->
+    <section class="bg-gray-100 p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade flex flex-col">
+      <h2 class="text-2xl font-bold text-blue-600 mb-4 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-6 w-6 text-yellow-500">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 19V3"/><path d="M6 8h12"/>
+        </svg>
+        My Projects & Tasks
+      </h2>
 
-      <div *ngIf="loading" class="text-blue-400 text-center text-lg mb-4">Loading user data...</div>
-      <div *ngIf="!loading && !currentUser && !errorMessage" class="text-yellow-400 text-center text-lg mb-4">
-        User data not found or not logged in. Please ensure you are logged in.
-      </div>
+      <div *ngIf="userProjects.length > 0; else noProjects">
+        <!-- Project Tabs -->
+        <div class="flex flex-wrap border-b-2 border-gray-300 mb-4 -mx-2">
+          <button
+            *ngFor="let project of userProjects"
+            (click)="selectProject(project.uid)"
+            [class.active]="selectedProjectForTasks?.uid === project.uid"
+            class="tab-button mx-2 mb-2"
+          >
+            {{ project.name }}
+          </button>
+        </div>
 
-      <main *ngIf="currentUser && !loading" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- My Accessible Files Section -->
-        <section class="bg-gray-800 p-6 rounded-xl shadow-lg">
-          <h2 class="text-2xl font-bold text-blue-300 mb-4 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-6 w-6">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="10" y2="9"/>
-            </svg>
-            My Accessible Files (for selected project)
-          </h2>
-          <div *ngIf="filteredAccessibleFiles.length > 0" class="overflow-y-auto max-h-60 custom-scrollbar">
-            <ul class="space-y-3">
-              <li *ngFor="let file of filteredAccessibleFiles" class="bg-gray-700 p-3 rounded-md flex items-center justify-between">
-                <span class="font-medium text-gray-200">{{ file.assetKey }}</span>
-                <a [href]="file.url" target="_blank" class="text-blue-400 hover:underline flex items-center text-sm">
-                  Access File
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                </a>
+        <!-- Task List for Selected Project -->
+        <div *ngIf="selectedProjectForTasks" class="tab-content custom-scrollbar overflow-y-auto max-h-80">
+          <h3 class="text-xl font-semibold text-custom-gradient mb-4">
+            Tasks for {{ selectedProjectForTasks.name }}
+          </h3>
+          <div *ngIf="selectedProjectForTasks.tasks.length > 0; else noTasks">
+            <ul class="space-y-4">
+              <li *ngFor="let task of selectedProjectForTasks.tasks" class="bg-gray-50 p-4 rounded-md shadow-md border border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-lg font-bold text-gray-800">{{ task.description }}</span>
+                  <div class="flex items-center space-x-2">
+                    <select
+                      [ngModel]="getTempTaskStatus(task.id)"
+                      (ngModelChange)="onTaskStatusChange(task.id, $event)"
+                      class="bg-white text-gray-900 p-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border-2 border-gray-300 input-focus-glow transition duration-250 ease-in-out"
+                    >
+                      <option value="not yet started" class="bg-white text-gray-900">Not Yet Started</option>
+                      <option value="in progress" class="bg-white text-gray-900">In Progress</option>
+                      <option value="completed" class="bg-white text-gray-900">Completed</option>
+                    </select>
+                    <button
+                      *ngIf="hasPendingStatusChange(task.id, task.status)"
+                      (click)="updateTaskStatus(selectedProjectForTasks.uid!, task.id, getTempTaskStatus(task.id))"
+                      class="bg-custom-gradient hover:opacity-90 active:opacity-100 text-white font-bold py-1 px-3 rounded-md text-sm transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+                      [disabled]="!hasPendingStatusChange(task.id, task.status)"
+                    >
+                      Update
+                    </button>
+                  </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-2">Due: {{ task.dueDate.toDate() | date:'mediumDate' }}</p>
+                <p *ngIf="task.assignedTo && task.assignedTo.length > 0" class="text-gray-600 text-xs">
+                  Assigned To: {{ getAssignedToEmails(task.assignedTo) }}
+                </p>
+                <p *ngIf="!task.assignedTo || task.assignedTo.length === 0" class="text-gray-500 text-xs">
+                  No one assigned.
+                </p>
               </li>
             </ul>
           </div>
-          <p *ngIf="filteredAccessibleFiles.length === 0" class="text-gray-500 text-center py-4">
-            No files currently accessible to you for the selected project.
-          </p>
-        </section>
-
-        <!-- My Projects & Tasks Section -->
-        <section class="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col">
-          <h2 class="text-2xl font-bold text-blue-300 mb-4 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-6 w-6">
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 19V3"/><path d="M6 8h12"/>
-            </svg>
-            My Projects & Tasks
-          </h2>
-
-          <div *ngIf="userProjects.length > 0; else noProjects">
-            <!-- Project Tabs -->
-            <div class="flex flex-wrap border-b border-gray-700 mb-4 -mx-2">
-              <button
-                *ngFor="let project of userProjects"
-                (click)="selectProject(project.uid)"
-                [class.active]="selectedProjectForTasks?.uid === project.uid"
-                class="tab-button mx-2 mb-2"
-              >
-                {{ project.name }}
-              </button>
-            </div>
-
-            <!-- Task List for Selected Project -->
-            <div *ngIf="selectedProjectForTasks" class="tab-content custom-scrollbar overflow-y-auto max-h-80">
-              <h3 class="text-xl font-semibold text-green-300 mb-4">
-                Tasks for {{ selectedProjectForTasks.name }}
-              </h3>
-              <div *ngIf="selectedProjectForTasks.tasks.length > 0; else noTasks">
-                <ul class="space-y-4">
-                  <li *ngFor="let task of selectedProjectForTasks.tasks" class="bg-gray-800 p-4 rounded-md shadow-md">
-                    <div class="flex justify-between items-center mb-2">
-                      <span class="text-lg font-bold text-blue-200">{{ task.description }}</span>
-                      <div class="flex items-center space-x-2">
-                        <select
-                          [ngModel]="getTempTaskStatus(task.id)"
-                          (ngModelChange)="onTaskStatusChange(task.id, $event)"
-                          class="bg-gray-700 text-white p-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="not yet started">Not Yet Started</option>
-                          <option value="in progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                        <button
-                          *ngIf="hasPendingStatusChange(task.id, task.status)"
-                          (click)="updateTaskStatus(selectedProjectForTasks.uid!, task.id, getTempTaskStatus(task.id))"
-                          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm transition duration-200 ease-in-out transform hover:scale-105"
-                          [disabled]="!hasPendingStatusChange(task.id, task.status)"
-                        >
-                          Update
-                        </button>
-                      </div>
-                    </div>
-                    <p class="text-gray-400 text-sm mb-2">Due: {{ task.dueDate.toDate() | date:'mediumDate' }}</p>
-                    <p *ngIf="task.assignedTo && task.assignedTo.length > 0" class="text-gray-400 text-xs">
-                      Assigned To: {{ getAssignedToEmails(task.assignedTo) }}
-                    </p>
-                    <p *ngIf="!task.assignedTo || task.assignedTo.length === 0" class="text-gray-500 text-xs">
-                      No one assigned.
-                    </p>
-                  </li>
-                </ul>
-              </div>
-              <ng-template #noTasks>
-                <p class="text-gray-500 text-center py-4">No tasks found for this project.</p>
-              </ng-template>
-            </div>
-          </div>
-          <ng-template #noProjects>
-            <p class="text-gray-500 text-center py-4">You are not assigned to any projects yet.</p>
+          <ng-template #noTasks>
+            <p class="text-gray-600 text-center py-4 bg-gray-50 border border-gray-200 rounded-md shadow-sm">No tasks found for this project.</p>
           </ng-template>
-        </section>
-      </main>
-    </div>
+        </div>
+      </div>
+      <ng-template #noProjects>
+        <p class="text-gray-600 text-center py-4 bg-gray-50 border border-gray-200 rounded-md shadow-sm">You are not assigned to any projects yet.</p>
+      </ng-template>
+    </section>
+  </main>
+</div>
+
   `,
 })
 export class UserDashboardComponent implements OnInit {
