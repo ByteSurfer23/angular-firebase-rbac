@@ -1,3 +1,5 @@
+// src/app/create-admin/create-admin.ts
+
 import { Component, Input, OnInit } from '@angular/core';
 import {
   Firestore,
@@ -7,37 +9,93 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-} from '@angular/fire/firestore'; // Removed getDocs, query, where as they are no longer needed for fetching domain UIDs
+} from '@angular/fire/firestore';
 import { FormsModule } from '@angular/forms';
 import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common'; // Import NgIf for conditional rendering
 import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // Ensure this path is correct
 
 @Component({
   selector: 'app-create-admin',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, NgIf], // Add NgIf to imports
   template: `
+    <style>
+      /* Google Font: Poppins */
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+      body { font-family: 'Poppins', sans-serif; }
+
+      /* Custom Spinner Animation for Light Background */
+      @keyframes spin-loader {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+      .loader-spinner {
+          border: 2px solid rgba(0, 0, 0, 0.2);
+          border-top: 2px solid #2563eb; /* Blue accent for spinner */
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          animation: spin-loader 1s linear infinite;
+      }
+
+      /* Subtle glow for focus */
+      .input-focus-glow:focus {
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5);
+          outline: none;
+      }
+
+      /* Card Entry Animation */
+      @keyframes slide-in-fade {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-slide-in-fade {
+          animation: slide-in-fade 0.6s ease-out forwards;
+      }
+
+      /* --- CUSTOM GRADIENT STYLES (Yellow & Hot Pink) --- */
+      .text-custom-gradient {
+          background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          color: transparent;
+          display: inline-block;
+      }
+
+      .bg-custom-gradient {
+          background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+      }
+    </style>
+
     <form
       (ngSubmit)="createAdmin()"
-      class="bg-white shadow-md rounded-xl p-6 max-w-md mx-auto space-y-4 mt-8"
+      class="min-h-screen flex flex-col items-center justify-center
+             bg-gray-50 p-6 text-gray-800 font-poppins
+             bg-white rounded-lg shadow-xl w-full max-w-2xl border-2 border-gray-300 space-y-8 animate-slide-in-fade"
     >
-      <h3 class="text-xl font-semibold text-center text-gray-800">
+      <h3 class="text-3xl font-bold text-center text-custom-gradient mb-6">
         Create Admin
       </h3>
 
       <div
         *ngIf="message"
-        class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
+        [ngClass]="{
+          'bg-green-100 border-green-300 text-green-800': isSuccessMessage,
+          'bg-red-100 border-red-300 text-red-800': !isSuccessMessage
+        }"
+        class="p-3 rounded-md relative mb-4 flex items-center justify-between w-full"
         role="alert"
       >
         <span class="block sm:inline">{{ message }}</span>
-        <span
-          class="absolute top-0 bottom-0 right-0 px-4 py-3"
-          (click)="message = ''"
+        <button
+          type="button"
+          class="ml-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+          (click)="message = ''; isSuccessMessage = false"
         >
           <svg
-            class="fill-current h-6 w-6 text-green-500"
+            class="fill-current h-5 w-5"
             role="button"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
@@ -47,82 +105,106 @@ import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // En
               d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 2.65a1.2 1.2 0 1 1-1.697-1.697L8.303 10l-2.651-2.651a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-2.651a1.2 1.2 0 1 1 1.697 1.697L11.697 10l2.651 2.651a1.2 1.2 0 0 1 0 1.697z"
             />
           </svg>
-        </span>
+        </button>
       </div>
 
-      <input
-        [(ngModel)]="name"
-        name="name"
-        placeholder="Admin Name"
-        required
-        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      <div class="w-full">
+        <label for="adminName" class="block text-sm font-medium text-gray-700 mb-2">Admin Name</label>
+        <input
+          [(ngModel)]="name"
+          name="name"
+          id="adminName"
+          placeholder="Enter admin name"
+          required
+          class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                 input-focus-glow transition duration-250 ease-in-out"
+        />
+      </div>
 
-      <input
-        [(ngModel)]="email"
-        name="email"
-        placeholder="Email"
-        required
-        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      <div class="w-full">
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+        <input
+          [(ngModel)]="email"
+          name="email"
+          id="email"
+          placeholder="Enter admin email"
+          required
+          class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                 input-focus-glow transition duration-250 ease-in-out"
+        />
+      </div>
 
-      <input
-        [(ngModel)]="password"
-        name="password"
-        type="password"
-        placeholder="Password"
-        required
-        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      <div class="w-full">
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+        <input
+          [(ngModel)]="password"
+          name="password"
+          id="password"
+          type="password"
+          placeholder="Enter password"
+          required
+          class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                 input-focus-glow transition duration-250 ease-in-out"
+        />
+      </div>
 
-      <div class="space-y-2">
-        <label class="flex items-center space-x-2">
+      <div class="space-y-3 text-gray-700 w-full">
+        <label class="flex items-center space-x-2 cursor-pointer">
           <input
             type="checkbox"
             [(ngModel)]="userAnalytics"
             name="userAnalytics"
+            class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
           />
-          <span>User Analytics</span>
+          <span>Enable User Analytics</span>
         </label>
-        <label class="flex items-center space-x-2">
+        <label class="flex items-center space-x-2 cursor-pointer">
           <input
             type="checkbox"
             [(ngModel)]="orgAnalytics"
             name="orgAnalytics"
+            class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
           />
-          <span>Org Analytics</span>
+          <span>Enable Org Analytics</span>
         </label>
-        <label class="flex items-center space-x-2">
-          <input type="checkbox" [(ngModel)]="auditLog" name="auditLog" />
-          <span>Audit Log</span>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="auditLog" name="auditLog"
+                 class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+          <span>Enable Audit Log</span>
         </label>
       </div>
 
-      <div class="space-y-2">
-        <label class="block text-gray-700 font-medium mb-1"
-          >Assign to Domains:</label
-        >
-        <div *ngIf="domains.length === 0" class="text-sm text-gray-500">
+      <div class="space-y-3 w-full">
+        <label class="block text-gray-700 font-medium mb-1">Assign to Domains:</label>
+        <div *ngIf="domains.length === 0" class="text-sm text-gray-500 p-2 border border-gray-200 rounded-md bg-gray-50">
           No domains found for this organization.
         </div>
 
-        <div *ngFor="let domain of domains" class="flex items-center space-x-2">
+        <div *ngFor="let domain of domains" class="flex items-center space-x-2 p-2 bg-gray-50 rounded-md border border-gray-200">
           <input
             type="checkbox"
             #domainCheckbox
             [checked]="domain.selected"
             (change)="onDomainSelectionChange(domain.uid, domainCheckbox.checked)"
-            class="form-checkbox h-4 w-4 text-blue-600"
+            class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
           />
-          <span>{{ domain.name }}</span>
+          <span class="text-gray-700">{{ domain.name }}</span>
         </div>
       </div>
 
       <button
         type="submit"
-        class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition"
+        [disabled]="loading"
+        class="w-full py-3 px-6 text-white font-semibold rounded-md bg-custom-gradient border-2 border-gray-300
+               hover:bg-custom-gradient active:bg-custom-gradient
+               transition duration-1000 ease-in-out transform hover:-translate-y-0.5
+               disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
       >
-        Create Admin
+        <span *ngIf="!loading">Create Admin</span>
+        <span *ngIf="loading" class="flex items-center space-x-2">
+          <div class="loader-spinner"></div>
+          <span>Creating...</span>
+        </span>
       </button>
     </form>
   `,
@@ -136,7 +218,8 @@ export class CreateAdminComponent implements OnInit {
   orgAnalytics = false;
   auditLog = false;
   message = '';
-  domain='';
+  isSuccessMessage: boolean = false; // To control message styling
+  loading: boolean = false; // Loading state for the button
 
   domains: { name: string; uid: string; selected: boolean }[] = [];
   selectedDomainUids: string[] = [];
@@ -150,6 +233,10 @@ export class CreateAdminComponent implements OnInit {
   async fetchDomains() {
     if (!this.orgId) {
       console.warn('orgId is not provided for fetching domains.');
+      this.showTemporaryMessage(
+        'Organization ID is missing. Cannot fetch domains.',
+        false
+      );
       return;
     }
     try {
@@ -158,22 +245,20 @@ export class CreateAdminComponent implements OnInit {
 
       if (orgDocSnap.exists()) {
         const orgData = orgDocSnap.data();
-        // Correctly read 'domains' as a map (object)
         const domainsMap: { [key: string]: string } = orgData?.['domains'] || {};
 
-        // Convert the map entries directly into the desired array format
         this.domains = Object.entries(domainsMap).map(([name, uid]) => ({
           name: name,
           uid: uid,
-          selected: false, // Initialize as not selected
+          selected: false,
         }));
       } else {
-        this.showTemporaryMessage('Organization not found to fetch domains.');
+        this.showTemporaryMessage('Organization not found to fetch domains.', false);
         this.domains = [];
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching domains:', error);
-      this.showTemporaryMessage('Failed to fetch domains.');
+      this.showTemporaryMessage(`Failed to fetch domains: ${error.message}`, false);
     }
   }
 
@@ -193,16 +278,23 @@ export class CreateAdminComponent implements OnInit {
   async createAdmin() {
     if (!this.orgId) {
       this.showTemporaryMessage(
-        'Organization ID is missing. Cannot create admin.'
+        'Organization ID is missing. Cannot create admin.',
+        false
       );
       return;
     }
     if (this.selectedDomainUids.length === 0) {
       this.showTemporaryMessage(
-        'Please select at least one domain for the admin.'
+        'Please select at least one domain for the admin.',
+        false
       );
       return;
     }
+
+    this.loading = true; // Start loading
+    this.message = ''; // Clear previous messages
+    this.isSuccessMessage = false;
+
     try {
       const userCredential = await createUserWithEmailAndPassword(
         this.auth,
@@ -212,7 +304,6 @@ export class CreateAdminComponent implements OnInit {
       const newAdminUid = userCredential.user.uid;
 
       for (const domainUid of this.selectedDomainUids) {
-        // Construct the path for the admin document under each selected domain
         const adminRef = doc(
           this.firestore,
           `organizations/${this.orgId}/domain/${domainUid}/admins/${newAdminUid}`
@@ -234,7 +325,6 @@ export class CreateAdminComponent implements OnInit {
           associatedDomains: this.selectedDomainUids,
         });
 
-        // Update the main domain document to list its associated admins
         const domainDocRef = doc(
           this.firestore,
           `organizations/${this.orgId}/domain/${domainUid}`
@@ -252,13 +342,13 @@ export class CreateAdminComponent implements OnInit {
       const actoruid = localStorage.getItem('uid');
       logAuditActionWithSetDoc(
         this.firestore,
-        actoruid || '',
+        actoruid || 'unknown',
         'admin_creation',
         newAdminUid,
         'success'
       );
 
-      this.showTemporaryMessage('Admin created successfully!');
+      this.showTemporaryMessage('Admin created successfully!', true);
       this.name = '';
       this.email = '';
       this.password = '';
@@ -266,17 +356,29 @@ export class CreateAdminComponent implements OnInit {
       this.orgAnalytics = false;
       this.auditLog = false;
       this.selectedDomainUids = [];
-      this.domains.forEach((d) => (d.selected = false));
+      this.domains.forEach((d) => (d.selected = false)); // Reset checkboxes
     } catch (error: any) {
       console.error('Error creating admin:', error);
-      this.showTemporaryMessage(`Error creating admin: ${error.message}`);
+      let errorMessage = 'Failed to create admin. Please try again.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'The email address is already in use by another account.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      this.showTemporaryMessage(errorMessage, false);
+    } finally {
+      this.loading = false; // End loading
     }
   }
 
-  showTemporaryMessage(msg: string) {
+  showTemporaryMessage(msg: string, isSuccess: boolean) {
     this.message = msg;
+    this.isSuccessMessage = isSuccess;
     setTimeout(() => {
       this.message = '';
+      this.isSuccessMessage = false;
     }, 5000);
   }
 }

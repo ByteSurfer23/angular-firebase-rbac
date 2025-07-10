@@ -11,78 +11,137 @@ import {
 } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common'; // Ensure NgIf is imported for *ngIf
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, NgIf], // Ensure NgIf is in imports
   template: `
-    <div
-      class="min-h-screen flex flex-col items-center justify-center bg-gray-950 p-6 font-inter"
-    >
+       <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 text-gray-800 font-poppins">
       <style>
-        /* Import Inter font for a modern look */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        /* Google Font: Poppins */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
 
-        /* Simple spinner animation for loading state */
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        /* Custom Spinner Animation for Light Background */
+        @keyframes spin-loader {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .spinner {
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top: 2px solid #fff;
-          border-radius: 50%;
-          width: 16px;
-          height: 16px;
-          animation: spin 1s linear infinite;
+        .loader-spinner {
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-top: 2px solid #2563eb; /* Blue accent for spinner */
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin-loader 1s linear infinite;
+        }
+
+        /* Subtle glow for focus */
+        .input-focus-glow:focus {
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5);
+            outline: none;
+        }
+
+        /* Card Entry Animation */
+        @keyframes slide-in-fade {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in-fade {
+            animation: slide-in-fade 0.6s ease-out forwards;
+        }
+
+        /* Pulsing dot animation (for the 'Create New Organization' link) */
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+        .animate-pulse-dot {
+            animation: pulse-dot 1s infinite;
+        }
+
+        /* --- CUSTOM GRADIENT STYLES (Yellow & Hot Pink) --- */
+        .text-custom-gradient {
+            background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .bg-custom-gradient {
+            background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+            /* Transition for transform is now handled by Tailwind classes directly on the element */
         }
       </style>
 
       <form
         (ngSubmit)="login()"
-        class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md space-y-6 border border-gray-700"
+        class="bg-white pt-4 pb-8 px-8 rounded-lg shadow-xl w-full max-w-md border-2 border-gray-300 space-y-8 animate-slide-in-fade"
       >
-        <h2 class="text-3xl font-bold text-center text-blue-400">Login</h2>
-        <input
-          [(ngModel)]="email"
-          name="email"
-          placeholder="Email"
-          required
-          class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          [(ngModel)]="password"
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <h2 class="text-3xl font-bold text-center text-custom-gradient -mt-2 mb-6">Login</h2> <!-- Adjusted margin for higher position -->
+        
+        <!-- Input Fields -->
+        <div class="space-y-5">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                    [(ngModel)]="email"
+                    name="email"
+                    id="email"
+                    placeholder="Enter your email"
+                    required
+                    class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                           input-focus-glow transition duration-250 ease-in-out"
+                />
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                    [(ngModel)]="password"
+                    name="password"
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    required
+                    class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500
+                           input-focus-glow transition duration-250 ease-in-out"
+                />
+            </div>
+        </div>
+
         <button
           type="submit"
           [disabled]="loading"
-          class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          class="w-full py-3 px-6 text-white font-semibold rounded-md bg-custom-gradient border-2 border-gray-300
+                 hover:bg-custom-gradient active:bg-custom-gradient
+                 transition duration-100 ease-in-out transform hover:-translate-y-0.5
+                 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           <span *ngIf="!loading">Login</span>
-          <span *ngIf="loading" class="flex items-center">
-            <div class="spinner mr-2"></div>
-            Logging in...
+          <span *ngIf="loading" class="flex items-center space-x-2">
+            <div class="loader-spinner"></div>
+            <span>Logging in...</span>
           </span>
         </button>
-        <div *ngIf="errorMessage" class="text-red-400 text-sm text-center p-2 bg-red-900 bg-opacity-30 rounded-md">
+        
+        <div *ngIf="errorMessage" class="text-red-800 text-sm text-center p-3 bg-red-100 border border-red-300 rounded-md">
           {{ errorMessage }}
         </div>
-      </form>
 
-      <button
-        (click)="goToSignup()"
-        class="mt-6 text-blue-400 hover:text-blue-300 font-medium transition duration-200 ease-in-out transform hover:scale-105"
-      >
-        Create New Organization
-      </button>
+        <!-- Moved "Create New Organization" button inside the form, styled grey -->
+<button
+  (click)="goToSignup()"
+  type="button" 
+  class="mt-4 w-full text-gray-300 py-3 rounded-md 
+         font-medium transition duration-200 ease-in-out transform hover:scale-105 flex items-center justify-center space-x-2"
+>
+  <span class="text-gray-400">Create New Organization</span>
+</button>
+      </form>
     </div>
   `,
 })
@@ -106,7 +165,7 @@ export class LoginComponent {
     let userFoundInFirestore = false;
     let domainid = '';
     let useremail: string | null = '';
-    let userDepartment: string | null = null; // Declare the variable here
+    let userDepartment: string | null = null;
 
     this.errorMessage = null;
 
@@ -140,7 +199,7 @@ export class LoginComponent {
           customization = rootAdminSnap.data()?.['customization'] || {};
           orgId = orgDoc.id;
           userFoundInFirestore = true;
-          userDepartment = 'Root Admin'; // Assign a department for root if needed in dashboard
+          userDepartment = 'Root Admin';
           break;
         }
       }
@@ -150,7 +209,7 @@ export class LoginComponent {
         let emailParts = this.email.split('@');
         let localPart = emailParts[0];
         let emailHost = emailParts[1];
-        let userDomain = ''; // This will hold the extracted domain name
+        let userDomain = '';
 
         const commonProviders = [
           'gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com',
@@ -196,7 +255,7 @@ export class LoginComponent {
                 role = 'admin';
                 customization = adminSnap.data()?.['customization'] || {};
                 userFoundInFirestore = true;
-                userDepartment = userDomain; // Set userDepartment to the extracted domain name
+                userDepartment = userDomain;
                 break;
               }
 
@@ -212,7 +271,7 @@ export class LoginComponent {
                   role = 'user';
                   customization = userSnap.data()?.['customization'] || {};
                   userFoundInFirestore = true;
-                  userDepartment = userDomain; // Set userDepartment to the extracted domain name
+                  userDepartment = userDomain;
                   break;
                 }
               }
@@ -239,7 +298,6 @@ export class LoginComponent {
       if (userDepartment) {
           localStorage.setItem('userDepartment', userDepartment);
       } else {
-          // If no specific domain department is found (e.g., for root user), clear it
           localStorage.removeItem('userDepartment');
       }
 
@@ -247,7 +305,6 @@ export class LoginComponent {
       this.router.navigate(['/dashboard']);
     } catch (err: any) {
       console.error('Login failed:', err);
-      // Provide user-friendly error messages
       if (
         err.code === 'auth/user-not-found' ||
         err.code === 'auth/wrong-password' ||
