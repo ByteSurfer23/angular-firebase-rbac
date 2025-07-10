@@ -247,11 +247,12 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
         <!-- END INLINED NAVBAR -->
 
         <!-- Department Specific Content (conditionally displayed by activeSection) -->
+
         <div
           class="mt-8 p-4 bg-gray-100 rounded-lg shadow-inner border-2 border-gray-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
           *ngIf="activeSection === 'overview'"
         >
-          <h2 class="text-xl font-bold text-gray-700 mb-4">
+          <h2 class="text-2xl font-bold text-custom-gradient mb-4">
             Department Specific Content
           </h2>
           <ng-container #departmentComponentHost></ng-container>
@@ -274,91 +275,83 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
 
         <!-- Your Customization & Account Details Grid (conditionally displayed by activeSection) -->
         <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm text-gray-600"
+          class="grid grid-cols-1 md:grid-cols-2 gap-6 text-base text-gray-600"
           *ngIf="activeSection === 'overview'"
         >
           <div
-            class="p-5 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+            class="p-6 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md"
           >
-            <h3 class="font-semibold text-gray-700 mb-2">Your Customization</h3>
-            <p class="text-gray-600">
-              <strong class="font-medium">User Analytics:</strong>
+            <h3 class="font-semibold text-xl text-custom-gradient mb-3">
+              Your Customization
+            </h3>
+            <p class="text-gray-700 mb-2">
+              <strong class="font-bold">User Analytics:</strong>
               <span
                 [ngClass]="{
                   'text-green-600 font-semibold': customization.userAnalytics,
                   'text-red-600 font-semibold': !customization.userAnalytics
                 }"
+                class="ml-2"
                 >{{
                   customization.userAnalytics ? 'Enabled' : 'Disabled'
                 }}</span
               >
             </p>
-            <p class="text-gray-600">
-              <strong class="font-medium">Org Analytics:</strong>
+            <p class="text-gray-700 mb-2">
+              <strong class="font-bold">Org Analytics:</strong>
               <span
                 [ngClass]="{
                   'text-green-600 font-semibold': customization.orgAnalytics,
                   'text-red-600 font-semibold': !customization.orgAnalytics
                 }"
+                class="ml-2"
                 >{{ customization.orgAnalytics ? 'Enabled' : 'Disabled' }}</span
               >
             </p>
-            <p class="text-gray-600">
-              <strong class="font-medium">Audit Log:</strong>
+            <p class="text-gray-700">
+              <strong class="font-bold">Audit Log:</strong>
               <span
                 [ngClass]="{
                   'text-green-600 font-semibold': customization.auditLog,
                   'text-red-600 font-semibold': !customization.auditLog
                 }"
+                class="ml-2"
                 >{{ customization.auditLog ? 'Enabled' : 'Disabled' }}</span
               >
             </p>
           </div>
           <div
-            class="p-5 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+            class="p-6 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-sm transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-md"
           >
-            <h3 class="font-semibold text-gray-700 mb-2">Account Details</h3>
-            <p class="text-gray-600">
-              <strong class="font-medium">Organization ID:</strong>
-              <span class="font-normal text-gray-700 break-words">{{
+            <h3 class="font-semibold text-xl text-custom-gradient mb-3">
+              Account Details
+            </h3>
+            <p class="text-gray-700 mb-2">
+              <strong class="font-bold">Organization ID:</strong>
+              <span class="font-normal text-gray-800 break-words ml-2">{{
                 orgId || 'N/A'
               }}</span>
             </p>
-            <p class="text-gray-600">
-              <strong class="font-medium">User ID:</strong>
-              <span class="font-normal text-gray-700 break-words">{{
+            <p class="text-gray-700 mb-2">
+              <strong class="font-bold">User ID:</strong>
+              <span class="font-normal text-gray-800 break-words ml-2">{{
                 uid || 'N/A'
               }}</span>
             </p>
-            <p class="text-gray-600">
-              <strong class="font-medium">Domain ID:</strong>
-              <span class="font-normal text-gray-700 break-words">{{
+            <p class="text-gray-700 mb-2">
+              <strong class="font-bold">Domain ID:</strong>
+              <span class="font-normal text-gray-800 break-words ml-2">{{
                 domainUid || 'N/A'
               }}</span>
             </p>
-            <p class="text-gray-600">
-              <strong class="font-medium">Email:</strong>
-              <span class="font-normal text-gray-700 break-words">{{
+            <p class="text-gray-700">
+              <strong class="font-bold">Email:</strong>
+              <span class="font-normal text-gray-800 break-words ml-2">{{
                 userEmail || 'N/A'
               }}</span>
             </p>
           </div>
-          <div
-            class="p-5 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-sm flex items-center justify-center transition duration-300 ease-in-out transform hover:-translate-y-0.5"
-          >
-            <app-custom-buttons
-              [customization]="customization"
-            ></app-custom-buttons>
-          </div>
         </div>
-
-        <section
-          *ngIf="customization.userAnalytics && activeSection === 'overview'"
-          class="mt-8"
-        >
-          <app-user-lookup></app-user-lookup>
-        </section>
-
         <!-- Role-specific feature sections (conditionally displayed by activeSection) -->
         <div class="space-y-10 pt-6">
           <div
@@ -442,9 +435,29 @@ import { AuditLogViewerComponent } from '../auditpage/auditpage';
           *ngIf="activeSection === 'userAnalytics'"
           class="p-8 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-md space-y-4 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
         >
-          <h2 class="text-2xl font-bold text-custom-gradient text-center">
-            User Analytics Dashboard
-          </h2>
+          <div class="flex">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="30"
+              height="30"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="mr-4 h-8 w-8 text-yellow-500"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <h2 class="text-2xl font-bold text-custom-gradient text-center">
+              User Analytics Dashboard
+            </h2>
+          </div>
+
           <app-user-lookup></app-user-lookup>
         </div>
 

@@ -1,7 +1,7 @@
 // src/app/user-lookup/user-lookup.component.ts
 
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   Firestore,
@@ -18,125 +18,151 @@ import { AssignedUser, ProjectDocument, ProjectTask } from '../models/models';
 @Component({
   selector: 'app-user-lookup',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Removed NgChartsModule
+  imports: [CommonModule, FormsModule, TitleCasePipe],
   template: `
-    <div class="min-h-screen bg-gray-900 text-gray-100 font-inter p-4 sm:p-6 rounded-xl overflow-hidden">
+    <div class="min-h-screen bg-gray-50 text-gray-800 font-poppins p-4 sm:p-6 rounded-xl overflow-hidden">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
 
-        /* Custom Scrollbar for dark theme */
+        /* Custom Scrollbar for light theme */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
             border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1f2937; /* gray-800 */
+            background: #e5e7eb; /* gray-200 */
             border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #4b5563; /* gray-600 */
+            background-color: #9ca3af; /* gray-400 */
             border-radius: 4px;
-            border: 2px solid #1f2937; /* gray-800 */
+            border: 2px solid #e5e7eb; /* gray-200 */
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background-color: #6b7280; /* gray-500 */
         }
+
+        /* Subtle glow for focus */
+        .input-focus-glow:focus {
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5); /* Blue glow */
+            outline: none;
+        }
+
+        /* Card Entry Animation */
+        @keyframes slide-in-fade {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in-fade {
+            animation: slide-in-fade 0.6s ease-out forwards;
+        }
+
+        /* --- CUSTOM GRADIENT STYLES (Yellow & Hot Pink) --- */
+        .text-custom-gradient {
+            background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .bg-custom-gradient {
+            background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
+        }
       </style>
 
-      <header class="bg-gray-800 p-4 rounded-xl shadow-lg mb-6 text-center">
-        <h1 class="text-3xl font-bold text-blue-400 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 h-8 w-8 text-yellow-300">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          User Lookup & Management
-        </h1>
-        <p class="text-sm text-gray-400 mt-2">
-          Your Role: <span class="font-semibold text-blue-300">{{ userRole | titlecase }}</span> |
-          Organization: <span class="font-semibold text-blue-300">{{ orgId || 'N/A' }}</span>
-        </p>
-      </header>
-
-      <div *ngIf="message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-        <span class="block sm:inline">{{ message }}</span>
-        <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" (click)="message = ''">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-green-500">
+      <div *ngIf="message" class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded relative mb-4 shadow-md">
+        <span class="block sm:inline font-medium">{{ message }}</span>
+        <button type="button" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-green-600 hover:text-green-800" (click)="message = ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
             <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
           </svg>
-        </span>
+        </button>
       </div>
 
-      <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-        <span class="block sm:inline">{{ errorMessage }}</span>
-        <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" (click)="errorMessage = ''">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-red-500">
+      <div *ngIf="errorMessage" class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded relative mb-4 shadow-md">
+        <span class="block sm:inline font-medium">{{ errorMessage }}</span>
+        <button type="button" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-red-600 hover:text-red-800" (click)="errorMessage = ''">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
             <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
           </svg>
-        </span>
+        </button>
       </div>
 
-      <main class="bg-gray-800 p-6 rounded-xl shadow-lg">
-        <section *ngIf="userRole === 'root'">
-          <h3 class="text-xl font-bold text-blue-300 mb-4">Root User: Search User by UID in any Domain</h3>
-          <div class="space-y-4 mb-6">
-            <div>
-              <label for="searchDomainUid" class="block text-gray-300 text-sm font-bold mb-2">Domain ID:</label>
-              <input type="text" id="searchDomainUid" [(ngModel)]="searchDomainUid" name="searchDomainUid" placeholder="Enter Domain UID" required
-                     class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label for="searchUserUid" class="block text-gray-300 text-sm font-bold mb-2">User UID:</label>
-              <input type="text" id="searchUserUid" [(ngModel)]="searchUserUid" name="searchUserUid" placeholder="Enter User UID" required
-                     class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <button (click)="searchUserByUid()"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105">
-              Search User
-            </button>
+      <main class=" rounded-xl shadow-lg space-y-10">
+        <!-- General Loader for main operations -->
+        <div *ngIf="loading && !selectedUserForAnalytics" class="flex justify-center items-center py-8">
+          <div class="loader-spinner mr-3"></div>
+          <span class="text-gray-600 font-medium">Loading data...</span>
+        </div>
+
+        <section *ngIf="userRole === 'root' && !loading" class="animate-slide-in-fade p-6 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-inner space-y-6">
+          <h3 class="text-2xl font-bold text-custom-gradient text-center">Root User: Search User by UID in any Domain</h3>
+          <div>
+            <label for="searchDomainUid" class="block text-gray-700 text-sm font-medium mb-2">Domain ID:</label>
+            <input type="text" id="searchDomainUid" [(ngModel)]="searchDomainUid" name="searchDomainUid" placeholder="Enter Domain UID (e.g., domain123)" required
+                   class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 input-focus-glow transition duration-250 ease-in-out" />
           </div>
+          <div>
+            <label for="searchUserUid" class="block text-gray-700 text-sm font-medium mb-2">User UID:</label>
+            <input type="text" id="searchUserUid" [(ngModel)]="searchUserUid" name="searchUserUid" placeholder="Enter User UID (e.g., user456)" required
+                   class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 input-focus-glow transition duration-250 ease-in-out" />
+          </div>
+          <button (click)="searchUserByUid()" [disabled]="loading"
+                  class="w-full bg-custom-gradient text-white font-semibold py-3 px-6 rounded-lg border-2 border-gray-300
+                         hover:opacity-90 active:opacity-100 transition duration-300 ease-in-out transform hover:-translate-y-0.5
+                         disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2">
+            <span *ngIf="!loading">Search User</span>
+            <span *ngIf="loading" class="flex items-center space-x-2">
+              <div class="loader-spinner"></div>
+              <span>Searching...</span>
+            </span>
+          </button>
 
-          <div *ngIf="foundUser" class="mt-6 p-4 bg-gray-700 rounded-md border border-gray-600">
-            <h4 class="text-lg font-semibold text-green-300 mb-2">User Details:</h4>
-            <p><strong>UID:</strong> <span class="break-all">{{ foundUser.uid }}</span></p>
-            <p><strong>Email:</strong> <span class="break-all">{{ foundUser.email }}</span></p>
+          <div *ngIf="foundUser" class="mt-6 p-6 bg-white rounded-lg border-2 border-gray-300 shadow-md animate-slide-in-fade">
+            <h4 class="text-xl font-bold text-green-600 mb-3">User Details:</h4>
+            <p class="text-gray-700 mb-1"><strong>UID:</strong> <span class="break-all font-mono text-gray-800">{{ foundUser.uid }}</span></p>
+            <p class="text-gray-700"><strong>Email:</strong> <span class="break-all font-mono text-gray-800">{{ foundUser.email }}</span></p>
             <button (click)="selectUserForAnalytics(foundUser, true)"
-                    class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                    class="mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-5 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
               Show User Analytics
             </button>
           </div>
-          <p *ngIf="searchAttempted && !foundUser" class="mt-4 text-red-400 text-center">User not found in the specified domain.</p>
+          <p *ngIf="searchAttempted && !foundUser && !loading" class="mt-4 text-red-600 text-center font-medium">User not found in the specified domain.</p>
         </section>
 
-        <section *ngIf="userRole === 'admin' || userRole === 'user'">
-          <h3 class="text-xl font-bold text-blue-300 mb-4">All Users in Your Domain</h3>
-          <div class="mb-4">
+        <section *ngIf="(userRole === 'admin' || userRole === 'user') && !loading" class="animate-slide-in-fade p-6 bg-gray-100 rounded-lg border-2 border-gray-300 shadow-inner space-y-6">
+          <h3 class="text-2xl font-bold text-custom-gradient text-center">All Users in Your Domain</h3>
+          <div>
             <input
               type="text"
               placeholder="Filter users by email..."
               [(ngModel)]="filterTermUsers"
               name="filterTermUsers"
-              class="w-full p-3 border border-gray-700 rounded-md bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 input-focus-glow transition duration-250 ease-in-out"
             />
           </div>
-          <div class="overflow-y-auto max-h-96 custom-scrollbar">
-            <table class="min-w-full bg-gray-900 rounded-md overflow-hidden">
+          <div class="overflow-y-auto max-h-96 custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md">
+            <table class="min-w-full bg-white rounded-lg overflow-hidden">
               <thead>
-                <tr class="bg-gray-700 text-gray-200 uppercase text-sm leading-normal">
+                <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
                   <th class="py-3 px-6 text-left">User Email</th>
                   <th class="py-3 px-6 text-left">UID</th>
                   <th class="py-3 px-6 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody class="text-gray-300 text-sm font-light">
+              <tbody class="text-gray-800 text-sm font-light">
                 <tr *ngFor="let user of filteredDomainUsers"
                     [class.cursor-pointer]="true"
-                    [class.bg-blue-900]="selectedUserForAnalytics?.uid === user.uid"
-                    class="border-b border-gray-700 hover:bg-gray-700 transition duration-150 ease-in-out">
+                    [class.bg-blue-50]="selectedUserForAnalytics?.uid === user.uid"
+                    class="border-b border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out">
                   <td class="py-3 px-6 text-left break-all">{{ user.email }}</td>
-                  <td class="py-3 px-6 text-left break-all">{{ user.uid }}</td>
+                  <td class="py-3 px-6 text-left break-all font-mono">{{ user.uid }}</td>
                   <td class="py-3 px-6 text-center">
                     <button (click)="selectUserForAnalytics(user); $event.stopPropagation()"
-                            class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm transition">
+                            class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded-lg text-sm transition duration-300 ease-in-out transform hover:scale-105">
                       View Analytics
                     </button>
                   </td>
@@ -149,61 +175,66 @@ import { AssignedUser, ProjectDocument, ProjectTask } from '../models/models';
           </div>
         </section>
 
-        <section *ngIf="selectedUserForAnalytics" class="mt-8 bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
-          <h3 class="text-xl font-bold text-green-300 mb-4 text-center">Analytics for {{ selectedUserForAnalytics.email }}</h3>
+        <section *ngIf="selectedUserForAnalytics" class="mt-8 bg-gray-100 p-8 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade">
+          <h3 class="text-3xl font-bold text-custom-gradient mb-6 text-center">Analytics for {{ selectedUserForAnalytics.email }}</h3>
           <button (click)="selectedUserForAnalytics = null; resetAnalyticsData();"
-                  class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg mb-6 float-right">
+                  class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-lg mb-6 float-right
+                         transition duration-300 ease-in-out transform hover:scale-105">
             Hide Analytics
           </button>
           <div class="clear-both"></div>
 
-          <div *ngIf="analyticsDataAvailable" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="bg-gray-800 p-4 rounded-lg shadow-md text-center">
-              <h4 class="text-lg font-semibold text-blue-300 mb-2">Projects & Tasks Assigned</h4>
-              <p class="text-3xl font-bold text-white">{{ projectsAssignedCount }}</p>
-              <p class="text-gray-400">Projects Assigned</p>
-              <p class="text-3xl font-bold text-white mt-2">{{ tasksAssignedCount }}</p>
-              <p class="text-gray-400">Tasks Assigned</p>
+          <div *ngIf="analyticsDataAvailable" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center border-2 border-gray-200 transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+              <h4 class="text-xl font-semibold text-blue-600 mb-3">Projects & Tasks Assigned</h4>
+              <p class="text-5xl font-extrabold text-custom-gradient">{{ projectsAssignedCount }}</p>
+              <p class="text-gray-600 mt-1">Projects Assigned</p>
+              <p class="text-5xl font-extrabold text-custom-gradient mt-4">{{ tasksAssignedCount }}</p>
+              <p class="text-gray-600 mt-1">Tasks Assigned</p>
             </div>
 
-            <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-              <h4 class="text-lg font-semibold text-blue-300 mb-2 text-center">Task Status Breakdown</h4>
-              <div class="space-y-2 mt-4">
-                <div class="flex justify-between items-center text-green-400">
+            <div class="bg-white p-6 rounded-lg shadow-md border-2 border-gray-200 transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+              <h4 class="text-xl font-semibold text-blue-600 mb-3 text-center">Task Status Breakdown</h4>
+              <div class="space-y-3 mt-4 text-lg">
+                <div class="flex justify-between items-center text-green-700 font-medium">
                   <span>Completed:</span>
-                  <span class="font-bold">{{ completedTasksCount }} ({{ taskCompletionPercentage }}%)</span>
+                  <span class="font-bold">{{ completedTasksCount }} ({{ taskCompletionPercentage | number:'1.0-0' }}%)</span>
                 </div>
-                <div class="flex justify-between items-center text-yellow-400">
+                <div class="flex justify-between items-center text-yellow-700 font-medium">
                   <span>In Progress:</span>
                   <span class="font-bold">{{ inProgressTasksCount }}</span>
                 </div>
-                <div class="flex justify-between items-center text-gray-400">
+                <div class="flex justify-between items-center text-gray-700 font-medium">
                   <span>Not Yet Started:</span>
                   <span class="font-bold">{{ notYetStartedTasksCount }}</span>
                 </div>
               </div>
-              <div class="h-4 w-full bg-gray-600 rounded-full mt-4 overflow-hidden">
+              <div class="h-5 w-full bg-gray-300 rounded-full mt-6 overflow-hidden shadow-inner">
                 <div [style.width]="taskCompletionPercentage + '%'" class="h-full bg-green-500 rounded-full transition-all duration-500 ease-in-out"></div>
               </div>
             </div>
 
-            <div class="bg-gray-800 p-4 rounded-lg shadow-md lg:col-span-1 md:col-span-2">
-              <h4 class="text-lg font-semibold text-blue-300 mb-2 text-center">Monthly Task Completion (Last 12 Months)</h4>
+            <div class="bg-white p-6 rounded-lg shadow-md border-2 border-gray-200 lg:col-span-1 md:col-span-2 transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+              <h4 class="text-xl font-semibold text-blue-600 mb-3 text-center">Monthly Task Completion (Last 12 Months)</h4>
               <div *ngIf="monthlyCompletionData.length > 0; else noMonthlyData" class="overflow-y-auto max-h-48 custom-scrollbar mt-4">
                 <ul class="list-none p-0 m-0">
-                  <li *ngFor="let item of monthlyCompletionData" class="flex justify-between border-b border-gray-600 py-1.5 text-gray-300">
-                    <span>{{ item.monthYearLabel }}:</span>
-                    <span class="font-bold text-white">{{ item.count }} tasks</span>
+                  <li *ngFor="let item of monthlyCompletionData" class="flex justify-between items-center border-b border-gray-200 py-2 text-gray-700">
+                    <span class="font-medium">{{ item.monthYearLabel }}:</span>
+                    <span class="font-bold text-gray-800">{{ item.count }} tasks</span>
                   </li>
                 </ul>
               </div>
               <ng-template #noMonthlyData>
-                <p class="text-center text-gray-400 mt-4">No completed tasks in the last 12 months.</p>
+                <p class="text-center text-gray-500 mt-4">No completed tasks in the last 12 months.</p>
               </ng-template>
             </div>
           </div>
-          <div *ngIf="!analyticsDataAvailable" class="text-center text-gray-400 mt-4">
-            Loading analytics or no data available for this user.
+          <div *ngIf="!analyticsDataAvailable && !loading" class="text-center text-gray-600 mt-6 font-medium">
+            No analytics data available for this user.
+          </div>
+          <div *ngIf="loading" class="flex justify-center items-center mt-6">
+            <div class="loader-spinner mr-3"></div>
+            <span class="text-gray-600">Loading analytics...</span>
           </div>
         </section>
       </main>
@@ -229,6 +260,7 @@ export class UserLookupComponent implements OnInit {
   // Analytics properties
   selectedUserForAnalytics: AssignedUser | null = null;
   analyticsDataAvailable: boolean = false;
+  loading: boolean = false; // Added loading state for analytics
 
   projectsAssignedCount: number = 0;
   tasksAssignedCount: number = 0;
@@ -264,9 +296,11 @@ export class UserLookupComponent implements OnInit {
   showTemporaryMessage(msg: string, isError: boolean = false) {
     if (isError) {
       this.errorMessage = msg;
+      this.message = ''; // Clear success message if error occurs
       setTimeout(() => { this.errorMessage = ''; }, 5000);
     } else {
       this.message = msg;
+      this.errorMessage = ''; // Clear error message if success occurs
       setTimeout(() => { this.message = ''; }, 5000);
     }
   }
@@ -305,6 +339,7 @@ export class UserLookupComponent implements OnInit {
       return;
     }
 
+    this.loading = true; // Start loading for search
     try {
       let userFound: AssignedUser | null = null;
 
@@ -333,6 +368,8 @@ export class UserLookupComponent implements OnInit {
     } catch (error: any) {
       console.error('Error searching user by UID:', error);
       this.showTemporaryMessage(`Failed to search user: ${error.message || 'An unknown error occurred.'}`, true);
+    } finally {
+      this.loading = false; // End loading for search
     }
   }
 
@@ -344,6 +381,7 @@ export class UserLookupComponent implements OnInit {
       return;
     }
 
+    this.loading = true; // Start loading for fetching all users
     try {
       const usersCollectionRef = collection(this.firestore, `organizations/${this.orgId}/domain/${this.domainUid}/users`);
       const usersSnapshot = await getDocs(usersCollectionRef);
@@ -361,6 +399,8 @@ export class UserLookupComponent implements OnInit {
     } catch (error: any) {
       console.error('Error fetching all users in domain:', error);
       this.showTemporaryMessage(`Failed to load domain users: ${error.message || 'An unknown error occurred.'}`, true);
+    } finally {
+      this.loading = false; // End loading for fetching all users
     }
   }
 
@@ -390,6 +430,7 @@ export class UserLookupComponent implements OnInit {
       return;
     }
 
+    this.loading = true; // Start loading for analytics
     this.showTemporaryMessage(`Fetching analytics for ${user.email}...`);
 
     try {
@@ -432,7 +473,8 @@ export class UserLookupComponent implements OnInit {
             }
 
             // For Monthly Task Completion
-            if (task.status === 'completed' && task.createdAt) {
+            // Ensure task.createdAt is a Timestamp and convert to Date
+            if (task.status === 'completed' && task.createdAt instanceof Timestamp) {
               const date = task.createdAt.toDate();
               const year = date.getFullYear();
               const month = date.getMonth(); // 0-11
@@ -456,14 +498,20 @@ export class UserLookupComponent implements OnInit {
       for (let i = 11; i >= 0; i--) { // Last 12 months, including current
         const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
         const monthKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-        const monthLabel = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        const monthLabel = d.toLocaleString('default', { month: 'short', year: 'numeric' }); // Changed to 'numeric' for full year
         tempMonthlyData.push({
             monthYear: monthKey,
             monthYearLabel: monthLabel,
             count: monthlyCompletionCounts[monthKey] || 0
         });
       }
-      this.monthlyCompletionData = tempMonthlyData.filter(item => item.count > 0); // Only show months with completed tasks
+      // Filter to only show months with completed tasks, or show all if no tasks completed
+      this.monthlyCompletionData = tempMonthlyData.filter(item => item.count > 0);
+      if (this.monthlyCompletionData.length === 0 && totalTasksAssigned > 0) {
+        // If there are tasks but none completed in the last 12 months, show all months with 0
+        this.monthlyCompletionData = tempMonthlyData;
+      }
+
 
       this.analyticsDataAvailable = true;
       if (projectsAssignedCount === 0 && totalTasksAssigned === 0) {
@@ -476,6 +524,8 @@ export class UserLookupComponent implements OnInit {
       console.error('Error fetching user analytics data:', error);
       this.showTemporaryMessage(`Failed to load analytics for user: ${error.message || 'An unknown error occurred.'}`, true);
       this.analyticsDataAvailable = false;
+    } finally {
+      this.loading = false; // End loading for analytics
     }
   }
 }
