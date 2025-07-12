@@ -16,6 +16,9 @@ import {
   deleteDoc, // Added for deleting tasks/projects
 } from '@angular/fire/firestore';
 
+// Import HttpClient and HttpEventType for Cloudinary uploads
+import { HttpClient, HttpEventType } from '@angular/common/http';
+
 // Import the interfaces from the new file
 import {
   ProjectAsset,
@@ -26,654 +29,749 @@ import {
 import { logAuditActionWithSetDoc } from '../auditlogentry/auditlogentry'; // Adjusted path
 import { v4 as uuidv4 } from 'uuid';
 
+// IMPORTANT: Replace with your actual Cloudinary Cloud Name and Upload Preset.
+// For security, never expose your API Secret in client-side code.
+// Use unsigned upload presets for direct browser uploads, or generate signatures on a backend.
+const CLOUDINARY_CLOUD_NAME = 'ddljq4uyx'; // e.g., 'my-cloud-name'
+const CLOUDINARY_UPLOAD_PRESET = 'images_preset'; // e.g., 'my_unsigned_preset'
+
 @Component({
-  selector: 'app-create-project', // Renamed conceptually, but selector remains for consistency
+  selector: 'app-create-project',
   standalone: true,
   imports: [FormsModule, CommonModule],
   providers: [DatePipe],
   template: `
-  <div class="min-h-screen bg-gray-50 text-gray-800 font-poppins p-4 sm:p-6 rounded-xl overflow-hidden">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-    body {
-      font-family: 'Poppins', sans-serif;
-    }
-
-    /* Custom Scrollbar for light theme */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-      border-radius: 4px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #e5e7eb; /* gray-200 */
-      border-radius: 4px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: #9ca3af; /* gray-400 */
-      border-radius: 4px;
-      border: 2px solid #e5e7eb; /* gray-200 */
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background-color: #6b7280; /* gray-500 */
-    }
-
-    /* Subtle glow for focus */
-    .input-focus-glow:focus {
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5); /* Blue glow */
-      outline: none;
-    }
-
-    /* Card Entry Animation */
-    @keyframes slide-in-fade {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-    .animate-slide-in-fade {
-      animation: slide-in-fade 0.6s ease-out forwards;
-    }
-
-    /* --- CUSTOM GRADIENT STYLES (Yellow & Hot Pink) --- */
-    .text-custom-gradient {
-      background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      color: transparent;
-      display: inline-block;
-    }
-
-    .bg-custom-gradient {
-      background: linear-gradient(to right, #FFEA00, #FF1493); /* Bright Yellow to Hot Pink */
-    }
-  </style>
-
-  <header class="bg-white p-6 rounded-xl shadow-lg mb-6 text-center border-2 border-gray-300 animate-slide-in-fade">
-    <h1 class="text-4xl font-extrabold text-custom-gradient flex items-center justify-center">
-      Project & Task Management
-    </h1>
-    <p class="text-lg text-gray-600 mt-3">
-      Organization:
-      <strong class="font-semibold text-blue-600">{{ orgId || 'N/A' }}</strong>
-      | Domain:
-      <strong class="font-semibold text-pink-600">{{
-        domainUid || 'N/A'
-      }}</strong>
-    </p>
-  </header>
-
-  <!-- Messages -->
-  <div
-    *ngIf="message"
-    class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded relative mb-4 shadow-md"
-    role="alert"
-  >
-    <span class="block sm:inline font-medium">{{ message }}</span>
-    <button
-      type="button"
-      class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-green-600 hover:text-green-800"
-      (click)="message = ''"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="h-6 w-6"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="m15 9-6 6" />
-        <path d="m9 9 6 6" />
-      </svg>
-    </button>
-  </div>
-
-  <div
-    *ngIf="errorMessage"
-    class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded relative mb-4 shadow-md"
-    role="alert"
-  >
-    <span class="block sm:inline font-medium">{{ errorMessage }}</span>
-    <button
-      type="button"
-      class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-red-600 hover:text-red-800"
-      (click)="errorMessage = ''"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="h-6 w-6"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="m15 9-6 6" />
-        <path d="m9 9 6 6" />
-      </svg>
-    </button>
-  </div>
-
-  <main class="flex flex-col lg:flex-row gap-6">
-    <!-- Left Column: Create Project & Project Search -->
-    <section
-      class="lg:w-1/2  p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade"
-    >
-      <!-- Create New Project Form -->
-      <form
-        (ngSubmit)="createProject()"
-        class="space-y-6 mb-8 pb-8 border-b-2 border-gray-300"
-      >
-        <h3 class="text-2xl font-bold text-center text-custom-gradient">
-          Create New Project
-        </h3>
-
-        <div>
-          <label
-            for="projectName"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Project Name:</label
-          >
-          <input
-            type="text"
-            id="projectName"
-            [(ngModel)]="projectName"
-            name="projectName"
-            placeholder="Enter project name"
-            required
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-        </div>
-
-        <div>
-          <label
-            for="projectDescription"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Project Description:</label
-          >
-          <textarea
-            id="projectDescription"
-            [(ngModel)]="projectDescription"
-            name="projectDescription"
-            rows="3"
-            placeholder="Describe the project"
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          ></textarea>
-        </div>
-
-        <div class="border-2 border-gray-300 p-4 rounded-lg space-y-2 bg-white shadow-sm">
-          <h4
-            class="text-lg font-semibold text-blue-600 mb-3 flex items-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="mr-2 text-yellow-500"
-            >
-              <path
-                d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
-              />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            Project Assets (Documents/Images)
-          </h4>
-          <div
-            class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mb-4"
-          >
-            <input
-              type="text"
-              [(ngModel)]="currentAssetKey"
-              name="currentAssetKey"
-              placeholder="Asset Name (e.g., Design Doc)"
-              class="flex-grow p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-            />
-            <input
-              type="text"
-              [(ngModel)]="currentAssetUrl"
-              name="currentAssetUrl"
-              placeholder="URL to Image/Document"
-              class="flex-grow p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-            />
-            <button
-              type="button"
-              (click)="addAsset()"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 whitespace-nowrap"
-            >
-              +
-            </button>
-          </div>
-          <ul
-            *ngIf="projectAssets.length > 0"
-            class="list-disc pl-5 space-y-2 overflow-y-auto max-h-48 custom-scrollbar"
-          >
-            <li
-              *ngFor="let asset of projectAssets; let i = index"
-              class="p-2 border border-gray-200 rounded-md bg-white flex items-center justify-between shadow-sm"
-            >
-              <span class="break-all text-gray-800"
-                >{{ asset.key }}:
-                <a
-                  [href]="asset.url"
-                  target="_blank"
-                  class="text-blue-600 hover:underline"
-                  >{{ asset.url }}</a
-                ></span
-              >
-              <button
-                type="button"
-                (click)="removeAsset(i)"
-                class="ml-4 text-red-600 hover:text-red-800 text-sm font-semibold transition"
-              >
-                Remove
-              </button>
-            </li>
-          </ul>
-          <p
-            *ngIf="projectAssets.length === 0"
-            class="text-gray-500 text-sm mt-2"
-          >
-            No assets added yet.
-          </p>
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-custom-gradient text-white py-3 px-6 rounded-lg hover:opacity-90 active:opacity-100 transition font-bold text-lg transform hover:-translate-y-0.5"
-        >
-          Create Project
-        </button>
-      </form>
-
-      <!-- Project Search Section -->
-      <section class="mt-8">
-        <h3 class="text-2xl font-bold text-center text-custom-gradient mb-4">
-          Search Existing Projects
-        </h3>
-        <div class="mb-4">
-          <input
-            type="text"
-            placeholder="Search projects by name or description..."
-            [(ngModel)]="searchTermProjects"
-            name="searchTermProjects"
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-        </div>
-        <div class="overflow-y-auto max-h-96 custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md">
-          <table class="min-w-full bg-white rounded-lg overflow-hidden">
-            <thead>
-              <tr
-                class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal"
-              >
-                <th class="py-3 px-6 text-left">Project Name</th>
-                <th class="py-3 px-6 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="text-gray-800 text-sm font-light">
-              <tr
-                *ngFor="let project of filteredProjects"
-                class="border-b border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out"
-              >
-                <td class="py-3 px-6 text-left whitespace-nowrap">
-                  {{ project.name }}
-                </td>
-                <td class="py-3 px-6 text-center">
-                  <button
-                    (click)="selectProject(project)"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105"
-                  >
-                    Select
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredProjects.length === 0">
-                <td colspan="2" class="py-4 text-center text-gray-500">
-                  No projects found.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-
-    <!-- Right Column: Task Management for Selected Project -->
-    <section
-      *ngIf="selectedProject"
-      class="lg:w-1/2 bg-gray-100 p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade"
-    >
-      <h3 class="text-2xl font-bold text-center text-custom-gradient mb-4">
-        Tasks for:
-        <span class="text-blue-600">{{ selectedProject.name }}</span>
-        <button
-          (click)="selectedProject = null; resetTaskForm()"
-          class="ml-4 text-gray-600 hover:text-gray-800 text-sm font-medium transition"
-        >
-          (Clear Selection)
-        </button>
-      </h3>
-
-      <!-- Task Creation/Edit Form -->
-      <form
-        (ngSubmit)="editingTask ? updateTask() : addTask()"
-        class="space-y-4 mb-8 pb-8 border-b-2 border-gray-300"
-      >
-        <h4
-          class="text-xl font-semibold text-blue-600 mb-3 flex items-center"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="mr-2 text-yellow-500"
-          >
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            <path d="M10 12h4" />
-            <path d="M8 18h8" />
-            <path
-              d="M16 6H8c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"
-            />
-          </svg>
-          {{ editingTask ? 'Edit Task' : 'Add New Task' }}
-        </h4>
-
-        <div>
-          <label
-            for="taskDescription"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Task Description:</label
-          >
-          <input
-            type="text"
-            id="taskDescription"
-            [(ngModel)]="currentTaskDescription"
-            name="currentTaskDescription"
-            placeholder="Describe the task"
-            required
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-        </div>
-        <div>
-          <label
-            for="taskDueDate"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Due Date:</label
-          >
-          <input
-            type="date"
-            id="taskDueDate"
-            [(ngModel)]="currentTaskDueDate"
-            name="currentTaskDueDate"
-            title="Due Date"
-            required
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-        </div>
-        <div>
-          <label
-            for="taskReminderDate"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Reminder Date (Optional):</label
-          >
-          <input
-            type="date"
-            id="taskReminderDate"
-            [(ngModel)]="currentTaskReminderDate"
-            name="currentTaskReminderDate"
-            title="Reminder Date"
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-        </div>
-        <div>
-          <label
-            for="taskStatus"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Status:</label
-          >
-          <select
-            [(ngModel)]="currentTaskStatus"
-            name="currentTaskStatus"
-            required
-            id="taskStatus"
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          >
-            <option value="not yet started" class="bg-white text-gray-900">
-              Not Yet Started
-            </option>
-            <option value="in progress" class="bg-white text-gray-900">
-              In Progress
-            </option>
-            <option value="completed" class="bg-white text-gray-900">
-              Completed
-            </option>
-          </select>
-        </div>
-        <div>
-          <label
-            for="taskAssignedUserEmailInput"
-            class="block text-gray-700 text-sm font-medium mb-2"
-            >Assignee Email(s) (comma-separated):</label
-          >
-          <input
-            type="text"
-            id="taskAssignedUserEmailInput"
-            [(ngModel)]="currentTaskAssignedUserEmailInput"
-            name="currentTaskAssignedUserEmailInput"
-            placeholder="Enter emails to assign"
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-          <!-- Optional: Add a dropdown/autocomplete for user search suggestions here -->
-          <div
-            *ngIf="
-              currentTaskAssignedUserEmailInput &&
-              filteredDomainUsers.length > 0
-            "
-            class="bg-white rounded-lg mt-1 max-h-40 overflow-y-auto custom-scrollbar border border-gray-200 shadow-md"
-          >
-            <div
-              *ngFor="let user of filteredDomainUsers"
-              (click)="addAssigneeToInput(user.email)"
-              class="p-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0 text-gray-800"
-            >
-              {{ user.email }}
-            </div>
-          </div>
-        </div>
-        <div class="flex gap-4 pt-2">
-          <button
-            type="submit"
-            class="flex-grow bg-custom-gradient text-white font-bold py-3 px-6 rounded-lg border-2 border-gray-300
-                   hover:opacity-90 active:opacity-100 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
-          >
-            {{ editingTask ? 'Update Task' : 'Add Task' }}
-          </button>
-          <button
-            *ngIf="editingTask"
-            type="button"
-            (click)="resetTaskForm()"
-            class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg border-2 border-gray-300 transition duration-200 ease-in-out transform hover:scale-105"
-          >
-            Cancel Edit
-          </button>
-        </div>
-      </form>
-
-      <!-- Task List & Search -->
-      <section class="mt-8 flex-grow flex flex-col">
-        <h4
-          class="text-xl font-semibold text-blue-600 mb-4 flex items-center"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="mr-2 text-yellow-500"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          Project Tasks
-        </h4>
-        <div class="mb-4">
-          <input
-            type="text"
-            placeholder="Search tasks by description..."
-            [(ngModel)]="taskSearchTerm"
-            name="taskSearchTerm"
-            class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
-          />
-        </div>
-        <div class="overflow-y-auto flex-grow custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md">
-          <table class="min-w-full bg-white rounded-lg overflow-hidden">
-            <thead>
-              <tr
-                class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal"
-              >
-                <th class="py-3 px-6 text-left">Description</th>
-                <th class="py-3 px-6 text-center">Status</th>
-                <th class="py-3 px-6 text-center">Due Date</th>
-                <th class="py-3 px-6 text-center">Assigned To</th>
-                <th class="py-3 px-6 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="text-gray-800 text-sm font-light">
-              <tr
-                *ngFor="let task of filteredTasks; let i = index"
-                class="border-b border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out"
-              >
-                <td class="py-3 px-6 text-left">{{ task.description }}</td>
-                <td class="py-3 px-6 text-center">
-                  <span
-                    [ngClass]="{
-                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-opacity-50': task.status === 'in progress',
-                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-opacity-50': task.status === 'completed',
-                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border border-opacity-50': task.status === 'not yet started'
-                    }"
-                  >
-                    {{ task.status | titlecase }}
-                  </span>
-                </td>
-                <td class="py-3 px-6 text-center">
-                  {{ task.dueDate.toDate() | date : 'shortDate' }}
-                </td>
-                <td class="py-3 px-6 text-center">
-                  {{ getAssignedEmails(task.assignedTo) }}
-                </td>
-                <td class="py-3 px-6 text-center">
-                  <div class="flex item-center justify-center space-x-2">
-                    <button
-                      (click)="editTask(task)"
-                      class="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition duration-200 ease-in-out transform hover:scale-110"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="h-4 w-4"
-                      >
-                        <path
-                          d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      (click)="confirmDeleteTask(task)"
-                      class="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition duration-200 ease-in-out transform hover:scale-110"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="h-4 w-4"
-                      >
-                        <path d="M3 6h18" />
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr *ngIf="filteredTasks.length === 0">
-                <td colspan="5" class="py-4 text-center text-gray-500">
-                  No tasks found for this project.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <!-- Custom Confirmation Modal -->
-  <div
-    *ngIf="showConfirmModal"
-    class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 animate-slide-in-fade"
-  >
     <div
-      class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center space-y-4 border-2 border-gray-300"
+      class="min-h-screen bg-gray-50 text-gray-800 font-poppins p-4 sm:p-6 rounded-xl overflow-hidden"
     >
-      <p class="text-lg text-gray-800 font-medium">{{ confirmModalMessage }}</p>
-      <div class="flex justify-center space-x-4">
-        <button
-          (click)="confirmModalAction && confirmModalAction()"
-          class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 ease-in-out transform hover:scale-105"
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        /* Custom Scrollbar for light theme */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #e5e7eb; /* gray-200 */
+          border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #9ca3af; /* gray-400 */
+          border-radius: 4px;
+          border: 2px solid #e5e7eb; /* gray-200 */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #6b7280; /* gray-500 */
+        }
+
+        /* Subtle glow for focus */
+        .input-focus-glow:focus {
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5); /* Blue glow */
+          outline: none;
+        }
+
+        /* Card Entry Animation */
+        @keyframes slide-in-fade {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-in-fade {
+          animation: slide-in-fade 0.6s ease-out forwards;
+        }
+
+        /* --- CUSTOM GRADIENT STYLES (Yellow & Hot Pink) --- */
+        .text-custom-gradient {
+          background: linear-gradient(
+            to right,
+            #ffea00,
+            #ff1493
+          ); /* Bright Yellow to Hot Pink */
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          color: transparent;
+          display: inline-block;
+        }
+
+        .bg-custom-gradient {
+          background: linear-gradient(
+            to right,
+            #ffea00,
+            #ff1493
+          ); /* Bright Yellow to Hot Pink */
+        }
+
+        /* Progress Bar Styles */
+        .progress-bar-container {
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .progress-bar {
+            background-color: #8b5cf6; /* Purple for progress */
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+        }
+        .message-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #34d399;
+        }
+        .message-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #ef4444;
+        }
+      </style>
+
+      <header
+        class="bg-white p-6 rounded-xl shadow-lg mb-6 text-center border-2 border-gray-300 animate-slide-in-fade"
+      >
+        <h1
+          class="text-4xl font-extrabold text-custom-gradient flex items-center justify-center"
         >
-          Confirm
-        </button>
+          Project & Task Management
+        </h1>
+        <p class="text-lg text-gray-600 mt-3">
+          Organization:
+          <strong class="font-semibold text-blue-600">{{
+            orgId || 'N/A'
+          }}</strong>
+          | Domain:
+          <strong class="font-semibold text-pink-600">{{
+            domainUid || 'N/A'
+          }}</strong>
+        </p>
+      </header>
+
+      <!-- Messages -->
+      <div
+        *ngIf="message"
+        class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded relative mb-4 shadow-md"
+        role="alert"
+      >
+        <span class="block sm:inline font-medium">{{ message }}</span>
         <button
-          (click)="showConfirmModal = false"
-          class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition duration-200 ease-in-out transform hover:scale-105"
+          type="button"
+          class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-green-600 hover:text-green-800"
+          (click)="message = ''"
         >
-          Cancel
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-6 w-6"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="m15 9-6 6" />
+            <path d="m9 9 6 6" />
+          </svg>
         </button>
       </div>
-    </div>
-  </div>
-</div>
 
+      <div
+        *ngIf="errorMessage"
+        class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded relative mb-4 shadow-md"
+        role="alert"
+      >
+        <span class="block sm:inline font-medium">{{ errorMessage }}</span>
+        <button
+          type="button"
+          class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer text-red-600 hover:text-red-800"
+          (click)="errorMessage = ''"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-6 w-6"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="m15 9-6 6" />
+            <path d="m9 9 6 6" />
+          </svg>
+        </button>
+      </div>
+
+      <main class="flex flex-col lg:flex-row gap-6">
+        <!-- Left Column: Create Project & Project Search -->
+        <section
+          class="lg:w-1/2  p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade"
+        >
+          <!-- Create New Project Form -->
+          <form
+            (ngSubmit)="createProject()"
+            class="space-y-6 mb-8 pb-8 border-b-2 border-gray-300"
+          >
+            <h3 class="text-2xl font-bold text-center text-custom-gradient">
+              Create New Project
+            </h3>
+
+            <div>
+              <label
+                for="projectName"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Project Name:</label
+              >
+              <input
+                type="text"
+                id="projectName"
+                [(ngModel)]="projectName"
+                name="projectName"
+                placeholder="Enter project name"
+                required
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+
+            <div>
+              <label
+                for="projectDescription"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Project Description:</label
+              >
+              <textarea
+                id="projectDescription"
+                [(ngModel)]="projectDescription"
+                name="projectDescription"
+                rows="3"
+                placeholder="Describe the project"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              ></textarea>
+            </div>
+
+            <div
+              class="border-2 border-gray-300 p-4 rounded-lg space-y-2 bg-white shadow-sm"
+            >
+              <h4
+                class="text-lg font-semibold text-blue-600 mb-3 flex justify-between"
+              >
+                <div class="flex">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="mr-2 text-yellow-500"
+                  >
+                    <path
+                      d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+                    />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  Project Assets (Documents/Images)
+                </div>
+                <button
+                  type="button"
+                  (click)="addAsset()"
+                  [disabled]="!currentAssetKey || !selectedFile || uploadingCloudinary"
+                  [ngClass]="{'bg-blue-600 hover:bg-blue-700': currentAssetKey && selectedFile && !uploadingCloudinary, 'bg-gray-400 cursor-not-allowed': !currentAssetKey || !selectedFile || uploadingCloudinary}"
+                  class="font-bold py-1 px-3 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 whitespace-nowrap"
+                >
+                  {{ uploadingCloudinary ? 'Uploading...' : '+' }}
+                </button>
+              </h4>
+
+              <div
+                class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0 mb-4"
+              >
+                <input
+                  type="text"
+                  [(ngModel)]="currentAssetKey"
+                  name="currentAssetKey"
+                  placeholder="Asset Name"
+                  class="w-full md:w-1/2 p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+                />
+                <input
+                  type="file"
+                  (change)="onFileSelected($event)"
+                  class="w-full md:w-1/2 p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900
+                         file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0
+                         file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700
+                         hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+                />
+              </div>
+
+              <!-- Progress Bar and Messages for Asset Upload -->
+              <ng-container *ngIf="uploadingCloudinary">
+                <div class="progress-bar-container">
+                  <div
+                    class="progress-bar"
+                    [style.width.%]="cloudinaryUploadProgress"
+                  ></div>
+                </div>
+              </ng-container>
+
+              <div
+                *ngIf="cloudinaryMessage || cloudinaryError"
+                [ngClass]="{'message-success': cloudinaryMessage && !cloudinaryError, 'message-error': cloudinaryError}"
+                class="mt-4 text-center text-sm font-medium"
+              >
+                {{ cloudinaryMessage || cloudinaryError }}
+              </div>
+              <!-- End Progress Bar and Messages -->
+
+
+              <ul
+                *ngIf="projectAssets.length > 0"
+                class="list-disc pl-5 space-y-2 overflow-y-auto max-h-48 custom-scrollbar"
+              >
+                <li
+                  *ngFor="let asset of projectAssets; let i = index"
+                  class="p-2 border border-gray-200 rounded-md bg-white flex items-center justify-between shadow-sm"
+                >
+                  <span class="break-all text-gray-800"
+                    >{{ asset.key }}:
+                    <a
+                      [href]="asset.url"
+                      target="_blank"
+                      class="text-blue-600 hover:underline"
+                      >{{ asset.url }}</a
+                    ></span
+                  >
+                  <button
+                    type="button"
+                    (click)="removeAsset(i)"
+                    class="ml-4 text-red-600 hover:text-red-800 text-sm font-semibold transition"
+                  >
+                    Remove
+                  </button>
+                </li>
+              </ul>
+              <p
+                *ngIf="projectAssets.length === 0"
+                class="text-gray-500 text-sm mt-2"
+              >
+                No assets added yet.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              class="w-full bg-custom-gradient text-white py-3 px-6 rounded-lg hover:opacity-90 active:opacity-100 transition font-bold text-lg transform hover:-translate-y-0.5"
+            >
+              Create Project
+            </button>
+          </form>
+
+          <!-- Project Search Section -->
+          <section class="mt-8">
+            <h3
+              class="text-2xl font-bold text-center text-custom-gradient mb-4"
+            >
+              Search Existing Projects
+            </h3>
+            <div class="mb-4">
+              <input
+                type="text"
+                placeholder="Search projects by name or description..."
+                [(ngModel)]="searchTermProjects"
+                name="searchTermProjects"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+            <div
+              class="overflow-y-auto max-h-96 custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md"
+            >
+              <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <thead>
+                  <tr
+                    class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal"
+                  >
+                    <th class="py-3 px-6 text-left">Project Name</th>
+                    <th class="py-3 px-6 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-800 text-sm font-light">
+                  <tr
+                    *ngFor="let project of filteredProjects"
+                    class="border-b border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out"
+                  >
+                    <td class="py-3 px-6 text-left whitespace-nowrap">
+                      {{ project.name }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                      <button
+                        (click)="selectProject(project)"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105"
+                      >
+                        Select
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredProjects.length === 0">
+                    <td colspan="2" class="py-4 text-center text-gray-500">
+                      No projects found.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- Right Column: Task Management for Selected Project -->
+        <section
+          *ngIf="selectedProject"
+          class="lg:w-1/2 bg-gray-100 p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade"
+        >
+          <h3 class="text-2xl font-bold text-center text-custom-gradient mb-4">
+            Tasks for:
+            <span class="text-blue-600">{{ selectedProject.name }}</span>
+            <button
+              (click)="selectedProject = null; resetTaskForm()"
+              class="ml-4 text-gray-600 hover:text-gray-800 text-sm font-medium transition"
+            >
+              (Clear Selection)
+            </button>
+          </h3>
+
+          <!-- Task Creation/Edit Form -->
+          <form
+            (ngSubmit)="editingTask ? updateTask() : addTask()"
+            class="space-y-4 mb-8 pb-8 border-b-2 border-gray-300"
+          >
+            <h4
+              class="text-xl font-semibold text-blue-600 mb-3 flex items-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="mr-2 text-yellow-500"
+              >
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <path d="M10 12h4" />
+                <path d="M8 18h8" />
+                <path
+                  d="M16 6H8c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"
+                />
+              </svg>
+              {{ editingTask ? 'Edit Task' : 'Add New Task' }}
+            </h4>
+
+            <div>
+              <label
+                for="taskDescription"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Task Description:</label
+              >
+              <input
+                type="text"
+                id="taskDescription"
+                [(ngModel)]="currentTaskDescription"
+                name="currentTaskDescription"
+                placeholder="Describe the task"
+                required
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+            <div>
+              <label
+                for="taskDueDate"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Due Date:</label
+              >
+              <input
+                type="date"
+                id="taskDueDate"
+                [(ngModel)]="currentTaskDueDate"
+                name="currentTaskDueDate"
+                title="Due Date"
+                required
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+            <div>
+              <label
+                for="taskReminderDate"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Reminder Date (Optional):</label
+              >
+              <input
+                type="date"
+                id="taskReminderDate"
+                [(ngModel)]="currentTaskReminderDate"
+                name="currentTaskReminderDate"
+                title="Reminder Date"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+            <div>
+              <label
+                for="taskStatus"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Status:</label
+              >
+              <select
+                [(ngModel)]="currentTaskStatus"
+                name="currentTaskStatus"
+                required
+                id="taskStatus"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              >
+                <option value="not yet started" class="bg-white text-gray-900">
+                  Not Yet Started
+                </option>
+                <option value="in progress" class="bg-white text-gray-900">
+                  In Progress
+                </option>
+                <option value="completed" class="bg-white text-gray-900">
+                  Completed
+                </option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="taskAssignedUserEmailInput"
+                class="block text-gray-700 text-sm font-medium mb-2"
+                >Assignee Email(s) (comma-separated):</label
+              >
+              <input
+                type="text"
+                id="taskAssignedUserEmailInput"
+                [(ngModel)]="currentTaskAssignedUserEmailInput"
+                name="currentTaskAssignedUserEmailInput"
+                placeholder="Enter emails to assign"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+              <!-- Optional: Add a dropdown/autocomplete for user search suggestions here -->
+              <div
+                *ngIf="
+                  currentTaskAssignedUserEmailInput &&
+                  filteredDomainUsers.length > 0
+                "
+                class="bg-white rounded-lg mt-1 max-h-40 overflow-y-auto custom-scrollbar border border-gray-200 shadow-md"
+              >
+                <div
+                  *ngFor="let user of filteredDomainUsers"
+                  (click)="addAssigneeToInput(user.email)"
+                  class="p-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0 text-gray-800"
+                >
+                  {{ user.email }}
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-4 pt-2">
+              <button
+                type="submit"
+                class="flex-grow bg-custom-gradient text-white font-bold py-3 px-6 rounded-lg border-2 border-gray-300
+                   hover:opacity-90 active:opacity-100 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+              >
+                {{ editingTask ? 'Update Task' : 'Add Task' }}
+              </button>
+              <button
+                *ngIf="editingTask"
+                type="button"
+                (click)="resetTaskForm()"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg border-2 border-gray-300 transition duration-200 ease-in-out transform hover:scale-105"
+              >
+                Cancel Edit
+              </button>
+            </div>
+          </form>
+
+          <!-- Task List & Search -->
+          <section class="mt-8 flex-grow flex flex-col">
+            <h4
+              class="text-xl font-semibold text-blue-600 mb-4 flex items-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="mr-2 text-yellow-500"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              Project Tasks
+            </h4>
+            <div class="mb-4">
+              <input
+                type="text"
+                placeholder="Search tasks by description..."
+                [(ngModel)]="taskSearchTerm"
+                name="taskSearchTerm"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+            <div
+              class="overflow-y-auto flex-grow custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md"
+            >
+              <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <thead>
+                  <tr
+                    class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal"
+                  >
+                    <th class="py-3 px-6 text-left">Description</th>
+                    <th class="py-3 px-6 text-center">Status</th>
+                    <th class="py-3 px-6 text-center">Due Date</th>
+                    <th class="py-3 px-6 text-center">Assigned To</th>
+                    <th class="py-3 px-6 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-800 text-sm font-light">
+                  <tr
+                    *ngFor="let task of filteredTasks; let i = index"
+                    class="border-b border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out"
+                  >
+                    <td class="py-3 px-6 text-left">{{ task.description }}</td>
+                    <td class="py-3 px-6 text-center">
+                      <span
+                        [ngClass]="{
+                          'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-opacity-50':
+                            task.status === 'in progress',
+                          'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-opacity-50':
+                            task.status === 'completed',
+                          'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border border-opacity-50':
+                            task.status === 'not yet started'
+                        }"
+                      >
+                        {{ task.status | titlecase }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                      {{ getFormattedDate(task.dueDate) }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                      {{ getAssignedEmails(task.assignedTo) }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                      <div class="flex item-center justify-center space-x-2">
+                        <button
+                          (click)="editTask(task)"
+                          class="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition duration-200 ease-in-out transform hover:scale-110"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="h-4 w-4"
+                          >
+                            <path
+                              d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          (click)="confirmDeleteTask(task)"
+                          class="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition duration-200 ease-in-out transform hover:scale-110"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="h-4 w-4"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredTasks.length === 0">
+                    <td colspan="5" class="py-4 text-center text-gray-500">
+                      No tasks found for this project.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <!-- Custom Confirmation Modal -->
+      <div
+        *ngIf="showConfirmModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 animate-slide-in-fade"
+      >
+        <div
+          class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center space-y-4 border-2 border-gray-300"
+        >
+          <p class="text-lg text-gray-800 font-medium">
+            {{ confirmModalMessage }}
+          </p>
+          <div class="flex justify-center space-x-4">
+            <button
+              (click)="confirmModalAction && confirmModalAction()"
+              class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 ease-in-out transform hover:scale-105"
+            >
+              Confirm
+            </button>
+            <button
+              (click)="showConfirmModal = false"
+              class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition duration-200 ease-in-out transform hover:scale-105"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class CreateProjectComponent implements OnInit {
@@ -685,7 +783,15 @@ export class CreateProjectComponent implements OnInit {
   projectDescription: string = '';
   projectAssets: ProjectAsset[] = [];
   currentAssetKey: string = '';
-  currentAssetUrl: string = '';
+  // Removed currentAssetUrl as it's no longer directly bound to an input for manual entry
+
+  // Cloudinary specific states
+  selectedFile: File | null = null; // Renamed from selectedCloudinaryFile for simplicity
+  uploadingCloudinary: boolean = false;
+  cloudinaryUploadProgress: number = 0;
+  cloudinaryMessage: string | null = null;
+  cloudinaryError: string | null = null;
+
 
   // General Component States
   message: string = '';
@@ -718,7 +824,7 @@ export class CreateProjectComponent implements OnInit {
   confirmModalMessage: string = '';
   confirmModalAction: (() => void) | null = null;
 
-  constructor(private firestore: Firestore, private datePipe: DatePipe) {}
+  constructor(private firestore: Firestore, private datePipe: DatePipe, private http: HttpClient) {} // Inject HttpClient
 
   ngOnInit(): void {
     this.currentAdminUid = localStorage.getItem('uid') || '';
@@ -760,21 +866,115 @@ export class CreateProjectComponent implements OnInit {
   }
 
   // --- Project Creation Methods ---
-  addAsset() {
-    if (this.currentAssetKey && this.currentAssetUrl) {
+  async addAsset() {
+    if (!this.currentAssetKey) {
+      this.cloudinaryError = 'Please enter an Asset Name.';
+      this.cloudinaryMessage = null;
+      return;
+    }
+    if (!this.selectedFile) {
+      this.cloudinaryError = 'Please select a file to upload.';
+      this.cloudinaryMessage = null;
+      return;
+    }
+    if (this.uploadingCloudinary) {
+      this.cloudinaryError = 'An upload is already in progress.';
+      this.cloudinaryMessage = null;
+      return;
+    }
+
+    // Check if Cloudinary credentials are set (not empty strings)
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      this.cloudinaryError = 'Cloudinary configuration missing. Please update CLOUDINARY_CLOUD_NAME and UPLOAD_PRESET.';
+      this.cloudinaryMessage = null;
+      return;
+    }
+
+    // Reset messages/errors before new upload attempt
+    this.cloudinaryMessage = 'Uploading file...';
+    this.cloudinaryError = null;
+    this.uploadingCloudinary = true;
+    this.cloudinaryUploadProgress = 0;
+
+
+    const formData = new FormData();
+    formData.append('file', this.selectedFile);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+      const uploadResponse: any = await new Promise((resolve, reject) => {
+        this.http.post(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`,
+          formData,
+          {
+            reportProgress: true,
+            observe: 'events'
+          }
+        ).subscribe({
+          next: (event) => {
+            if (event.type === HttpEventType.UploadProgress) {
+              this.cloudinaryUploadProgress = Math.round(100 * (event.loaded / (event.total || 1)));
+              this.cloudinaryMessage = `Uploading file... (${this.cloudinaryUploadProgress}%)`;
+            } else if (event.type === HttpEventType.Response) {
+              resolve(event.body);
+            }
+          },
+          error: (err) => {
+            reject(err);
+          }
+        });
+      });
+
+      const cloudinaryUrl = uploadResponse.secure_url;
       this.projectAssets.push({
         key: this.currentAssetKey,
-        url: this.currentAssetUrl,
+        url: cloudinaryUrl,
       });
-      this.currentAssetKey = '';
-      this.currentAssetUrl = '';
-    } else {
-      this.showTemporaryMessage('Asset name and URL cannot be empty.', true);
+
+      this.cloudinaryMessage = 'Asset uploaded and added successfully!';
+      this.cloudinaryError = null; // Clear any previous error
+      this.resetAssetForm(); // Reset form after successful addition
+
+    } catch (err: any) {
+      console.error('Error uploading file to Cloudinary:', err);
+      this.cloudinaryError = `Upload failed: ${err.error?.error?.message || err.message || 'An unknown error occurred.'}`;
+      this.cloudinaryMessage = null; // Clear success message on error
+    } finally {
+      this.uploadingCloudinary = false;
+      this.cloudinaryUploadProgress = 0; // Reset progress bar
     }
   }
 
   removeAsset(index: number) {
     this.projectAssets.splice(index, 1);
+    this.showTemporaryMessage('Asset removed.');
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+      this.cloudinaryMessage = `File selected: ${this.selectedFile.name}`;
+      this.cloudinaryError = null;
+    } else {
+      this.selectedFile = null;
+      this.cloudinaryMessage = null;
+      this.cloudinaryError = null;
+    }
+  }
+
+  resetAssetForm(): void {
+    this.currentAssetKey = '';
+    this.selectedFile = null;
+    this.cloudinaryMessage = null;
+    this.cloudinaryError = null;
+    this.uploadingCloudinary = false;
+    this.cloudinaryUploadProgress = 0;
+    // Clear the file input element itself to allow re-selection of the same file
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   }
 
   async createProject() {
@@ -849,8 +1049,7 @@ export class CreateProjectComponent implements OnInit {
     this.projectName = '';
     this.projectDescription = '';
     this.projectAssets = [];
-    this.currentAssetKey = '';
-    this.currentAssetUrl = '';
+    this.resetAssetForm(); // Reset asset-related fields
   }
 
   // --- Project Search & Selection Methods ---
@@ -999,6 +1198,7 @@ export class CreateProjectComponent implements OnInit {
       createdAt: Timestamp.now(),
       status: this.currentTaskStatus,
       assignedTo: assignedUsers,
+      uid: newTaskUid,
     };
 
     this.projectTasks.push(newTask); // Add to local array
@@ -1230,6 +1430,6 @@ export class CreateProjectComponent implements OnInit {
         return this.datePipe.transform(date, 'mediumDate') || 'N/A';
       }
     }
-    return 'N/A';
+    return 'N/S'; // Changed from 'N/A' to 'N/S' for "Not Set" or "Not Specified"
   }
 }
