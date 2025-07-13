@@ -72,3 +72,11 @@ export interface ProjectDocument {
   createdAt: Timestamp; // The date and time the project was created
   isActive: boolean; // Flag indicating if the project is currently active
 }
+// new interface for chat message 
+export interface ChatMessage {
+  senderId: string;
+  senderEmail: string;
+  messageText: string;
+  timestamp: number; // Unix timestamp in milliseconds
+  id?: string; // Optional: Firebase Realtime Database key (auto-generated push key)
+}

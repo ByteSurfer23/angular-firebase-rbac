@@ -23,7 +23,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     // Firebase app and services are now directly in the providers array
-    provideFirebaseApp(() => initializeApp({ projectId: "to-do-list-7259e", appId: "1:862659189621:web:9c93ad9d67870eb773113c", storageBucket: "to-do-list-7259e.firebasestorage.app", apiKey: "AIzaSyC1pwzlbRu0hDN8_i33mBqqURGO-tDXjoc", authDomain: "to-do-list-7259e.firebaseapp.com", messagingSenderId: "862659189621", measurementId: "G-10JS85S8EQ" })),
+    provideFirebaseApp(() => initializeApp({ projectId: "to-do-list-7259e", appId: "1:862659189621:web:9c93ad9d67870eb773113c", storageBucket: "to-do-list-7259e.firebasestorage.app", apiKey: "AIzaSyC1pwzlbRu0hDN8_i33mBqqURGO-tDXjoc", authDomain: "to-do-list-7259e.firebaseapp.com", messagingSenderId: "862659189621", measurementId: "G-10JS85S8EQ", databaseURL:"https://to-do-list-7259e-default-rtdb.firebaseio.com/" })),
     provideAuth(() => getAuth()),
     provideAnalytics(() => getAnalytics()),
     provideFirestore(() => getFirestore()),

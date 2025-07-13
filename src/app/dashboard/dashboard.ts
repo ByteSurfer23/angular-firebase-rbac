@@ -26,6 +26,12 @@ import { Orgstats } from '../orgstats/orgstats';
 import { AuditLogViewerComponent } from '../auditpage/auditpage';
 import { SignOutButtonComponent } from "../signout/signout";
 
+// NEW IMPORTS FOR CHAT FUNCTIONALITY
+import { Firestore, collection, query, getDocs } from '@angular/fire/firestore'; // For fetching projects
+import { ProjectDocument } from '../models/models'; // Import ProjectDocument interface
+import { ProjectChatComponent } from '../project-chat/project-chat.component'; // Import the chat component
+import { FormsModule } from '@angular/forms';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -37,6 +43,7 @@ import { SignOutButtonComponent } from "../signout/signout";
     CreateProjectComponent,
     UserManagementComponent,
     CommonModule,
+    FormsModule, // <--- ADDED for project search input
     ProjectUserAssignerComponent,
     UserDashboardComponent,
     UserLookupComponent,
@@ -45,8 +52,9 @@ import { SignOutButtonComponent } from "../signout/signout";
     TitleCasePipe,
     Orgstats,
     AuditLogViewerComponent,
-    SignOutButtonComponent
-],
+    SignOutButtonComponent,
+    ProjectChatComponent // <--- IMPORTED ProjectChatComponent
+  ],
   template: `
     <div
       class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 font-poppins text-gray-800"
@@ -128,6 +136,29 @@ import { SignOutButtonComponent } from "../signout/signout";
             #ff1493
           ); /* Bright Yellow to Hot Pink */
         }
+
+        /* Custom Scrollbar for light theme */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #e5e7eb; /* gray-200 */
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #9ca3af; /* gray-400 */
+          border-radius: 4px;
+          border: 2px solid #e5e7eb; /* gray-200 */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #6b7280; /* gray-500 */
+        }
+        /* Subtle glow for focus */
+        .input-focus-glow:focus {
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5); /* Blue glow */
+          outline: none;
+        }
       </style>
 
       <div
@@ -205,6 +236,19 @@ import { SignOutButtonComponent } from "../signout/signout";
               Overview
             </button>
 
+            <!-- Project Chat Button -->
+            <button
+              (click)="onNavigateToSection('projectChat')"
+              [class.bg-gray-200]="activeSection === 'projectChat'"
+              [class.text-custom-gradient]="activeSection === 'projectChat'"
+              [class.border-b-2]="activeSection === 'projectChat'"
+              [class.border-pink-500]="activeSection === 'projectChat'"
+              class="py-2 px-5 rounded-md font-semibold text-gray-700 hover:bg-gray-200 hover:text-blue-600
+                     transition duration-200 ease-in-out transform hover:scale-105"
+            >
+              Project Chat
+            </button>
+
             <!-- Analytics and Audit Log Links (conditionally rendered) -->
             <button
               *ngIf="customization.userAnalytics"
@@ -245,7 +289,7 @@ import { SignOutButtonComponent } from "../signout/signout";
               Audit Log
             </button>
 
-                        <button
+            <button
               (click)="onNavigateToSection('signOut')"
               [class.bg-gray-200]="activeSection === 'signOut'"
               [class.text-custom-gradient]="activeSection === 'signOut'"
@@ -261,7 +305,7 @@ import { SignOutButtonComponent } from "../signout/signout";
         <!-- END INLINED NAVBAR -->
 
         <!-- Department Specific Content (conditionally displayed by activeSection) -->
-
+        <!-- This section is for dynamic components like IT/Finance dashboard -->
         <div
           class="mt-8 p-4 bg-gray-100 rounded-lg shadow-inner border-2 border-gray-300 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
           *ngIf="activeSection === 'overview'"
@@ -412,8 +456,7 @@ import { SignOutButtonComponent } from "../signout/signout";
               <div
                 class="bg-white transition duration-300 ease-in-out transform hover:-translate-y-0.5"
               >
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">
-                </h3>
+                <h3 class="text-xl font-semibold text-gray-700 mb-4"></h3>
                 <app-project-user-assigner></app-project-user-assigner>
               </div>
             </div>
@@ -430,6 +473,97 @@ import { SignOutButtonComponent } from "../signout/signout";
             </div>
           </div>
         </div>
+
+        <!-- NEW: Project Chat Section -->
+        <div
+          *ngIf="activeSection === 'projectChat'"
+          class="flex flex-col lg:flex-row gap-6 mt-8 p-4 bg-gray-100 rounded-lg shadow-md border-2 border-gray-300 animate-slide-in-fade"
+        >
+          <!-- Left Column: Project Selection for Chat -->
+          <section class="lg:w-1/2 p-4 ">
+            <h3 class="text-xl font-bold text-center text-custom-gradient mb-4">
+              Select Project for Chat
+            </h3>
+
+            <div class="mb-4">
+              <input
+                type="text"
+                placeholder="Search projects by name..."
+                [(ngModel)]="searchTermProjects"
+                name="searchTermProjects"
+                class="w-full p-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-glow transition duration-250 ease-in-out"
+              />
+            </div>
+
+            <div class="overflow-y-auto max-h-96 custom-scrollbar rounded-lg border-2 border-gray-300 shadow-md">
+              <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <thead>
+                  <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">Project Name</th>
+                    <th class="py-3 px-6 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-800 text-sm font-light">
+                  <tr
+                    *ngFor="let project of filteredProjects"
+                    class="border-b border-gray-200 hover:bg-gray-100 transition duration-150 ease-in-out"
+                  >
+                    <td class="py-3 px-6 text-left whitespace-nowrap">
+                      {{ project.name }}
+                      <span *ngIf="selectedProjectForChat?.uid === project.uid" class="ml-2 text-blue-500 text-xs">(Active Chat)</span>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                      <button
+                        (click)="selectProjectForChat(project)"
+                        [disabled]="selectedProjectForChat?.uid === project.uid"
+                        [ngClass]="{'bg-blue-600 hover:bg-blue-700': selectedProjectForChat?.uid !== project.uid, 'bg-gray-400 cursor-not-allowed': selectedProjectForChat?.uid === project.uid}"
+                        class="text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105"
+                      >
+                        {{ selectedProjectForChat?.uid === project.uid ? 'Selected' : 'View Chat' }}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredProjects.length === 0">
+                    <td colspan="2" class="py-4 text-center text-gray-500">
+                      No projects found for your organization/domain.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Right Column: Project Chat Display -->
+          <section *ngIf="selectedProjectForChat" class="lg:w-1/2 flex flex-col">
+            <h3 class="text-xl font-bold text-center text-custom-gradient mb-4">
+              Chat for: <span class="text-blue-600">{{ selectedProjectForChat.name }}</span>
+              <button
+                (click)="selectedProjectForChat = null"
+                class="ml-4 text-gray-600 hover:text-gray-800 text-sm font-medium transition"
+              >
+                (Clear Chat)
+              </button>
+            </h3>
+            <div class="flex-grow">
+              <app-project-chat
+                [organizationId]="selectedProjectForChat.orgId"
+                [domainUid]="selectedProjectForChat.domainUid"
+                [projectId]="selectedProjectForChat.uid"
+                [currentUserId]="uid"
+                [currentUserEmail]="userEmail" 
+              ></app-project-chat>
+            </div>
+          </section>
+
+          <section *ngIf="!selectedProjectForChat && projectsList.length > 0" class="lg:w-1/2 p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade flex items-center justify-center">
+              <p class="text-gray-500 text-lg text-center">Select a project from the left to view its chat.</p>
+          </section>
+
+          <section *ngIf="!selectedProjectForChat && projectsList.length === 0" class="lg:w-1/2 p-6 rounded-xl shadow-lg border-2 border-gray-300 animate-slide-in-fade flex items-center justify-center">
+              <p class="text-gray-500 text-lg text-center">No projects found for your current context. Please create one or ensure your organization/domain is set.</p>
+          </section>
+        </div>
+
 
         <!-- New sections for Analytics and Audit Log content -->
         <div
@@ -490,24 +624,32 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   domainUid: string | null = '';
   userDepartment: string | null = '';
   userEmail: string | null = '';
-  activeSection: string = 'overview'; // New state variable to control active section
+  uid: string | null = ''; // User ID for chat sender
+  orgId: string | null = '';
+
+  activeSection: string = 'overview'; // Initial active section
 
   customization: {
     userAnalytics: boolean;
     orgAnalytics: boolean;
     auditLog: boolean;
   } = { userAnalytics: false, orgAnalytics: false, auditLog: false };
-  orgId: string | null = '';
-  uid: string | null = '';
+
+
+  // NEW: Project and Chat related properties
+  projectsList: ProjectDocument[] = [];
+  searchTermProjects: string = '';
+  selectedProjectForChat: ProjectDocument | null = null;
+
 
   @ViewChild('departmentComponentHost', { read: ViewContainerRef })
   departmentComponentHost!: ViewContainerRef;
 
   private currentDynamicComponentRef: ComponentRef<any> | null = null;
 
-  constructor() {}
+  constructor(private firestore: Firestore) {} // Inject Firestore
 
-  ngOnInit() {
+  async ngOnInit(): Promise<void> { // Made ngOnInit async
     this.role = localStorage.getItem('userRole');
     const customizationStr = localStorage.getItem('customization');
     if (customizationStr) {
@@ -523,16 +665,31 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       }
     }
     this.orgId = localStorage.getItem('orgId');
-    this.uid = localStorage.getItem('uid');
+    this.uid = localStorage.getItem('uid'); // Retrieve user UID for chat
     this.domainUid = localStorage.getItem('domainUid');
-    this.userEmail = localStorage.getItem('useremail');
+    this.userEmail = localStorage.getItem('useremail'); // Retrieve user email for chat
     this.userDepartment = localStorage.getItem('userDepartment');
 
     // Set initial active section based on role
-    if (this.role) {
-      this.activeSection = this.role;
+    // I've removed the direct role-based activeSection setting here
+    // to allow 'overview' or 'projectChat' to be the default.
+    // If you want a specific role to default to its section, re-add that logic.
+    this.activeSection = 'overview'; // Default to overview
+
+    // Fetch projects and auto-select the first one if available
+    // This will ensure chat is visible immediately if there are projects
+    if (this.orgId && this.domainUid) {
+      await this.fetchProjects(); // Await project fetching
+      if (this.projectsList.length > 0) {
+        this.selectProjectForChat(this.projectsList[0]);
+        this.activeSection = 'projectChat'; // Automatically switch to chat section
+      } else {
+        // If no projects, default to overview or show a message
+        this.activeSection = 'overview';
+      }
     } else {
-      this.activeSection = 'overview';
+      console.warn('DashboardComponent: Missing organization or domain ID. Cannot fetch projects or load chat.');
+      // Keep activeSection as 'overview' if org/domain are missing
     }
   }
 
@@ -574,6 +731,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.currentDynamicComponentRef =
       this.departmentComponentHost.createComponent(componentType);
 
+    // Pass inputs to dynamically loaded components
     if (this.currentDynamicComponentRef.instance.userName !== undefined) {
       this.currentDynamicComponentRef.instance.userName = this.userEmail || '';
     }
@@ -584,6 +742,16 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       this.currentDynamicComponentRef.instance.userDepartment =
         this.userDepartment || '';
     }
+    if (this.currentDynamicComponentRef.instance.orgId !== undefined) { // Pass orgId
+      this.currentDynamicComponentRef.instance.orgId = this.orgId || '';
+    }
+    if (this.currentDynamicComponentRef.instance.domainUid !== undefined) { // Pass domainUid
+      this.currentDynamicComponentRef.instance.domainUid = this.domainUid || '';
+    }
+    if (this.currentDynamicComponentRef.instance.uid !== undefined) { // Pass uid
+      this.currentDynamicComponentRef.instance.uid = this.uid || '';
+    }
+
     console.log(`${componentType.name} loaded dynamically.`);
   }
 
@@ -637,7 +805,48 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         }
       }, 0);
     }
-    // No specific dynamic component loading for analytics/audit log sections,
+    // No specific dynamic component loading for analytics/audit log/projectChat sections,
     // their content is handled by *ngIf in the template directly.
+  }
+
+  // NEW: Project fetching and selection for chat
+  async fetchProjects(): Promise<void> {
+    if (!this.orgId || !this.domainUid) {
+      this.projectsList = [];
+      console.warn('DashboardComponent: Cannot fetch projects, organization ID or domain ID is missing.');
+      return;
+    }
+    try {
+      const projectsCollectionRef = collection(
+        this.firestore,
+        `organizations/${this.orgId}/domain/${this.domainUid}/projects`
+      );
+      const q = query(projectsCollectionRef);
+      const querySnapshot = await getDocs(q);
+      this.projectsList = querySnapshot.docs.map((doc) => ({
+        uid: doc.id,
+        ...(doc.data() as Omit<ProjectDocument, 'uid'>),
+      }));
+    } catch (error) {
+      console.error('DashboardComponent: Error fetching projects:', error);
+      // Implement a user-facing error message here
+    }
+  }
+
+  get filteredProjects(): ProjectDocument[] {
+    if (!this.searchTermProjects) {
+      return this.projectsList;
+    }
+    const lowerCaseSearchTerm = this.searchTermProjects.toLowerCase();
+    return this.projectsList.filter(
+      (project) =>
+        project.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+        project.description.toLowerCase().includes(lowerCaseSearchTerm)
+    );
+  }
+
+  selectProjectForChat(project: ProjectDocument): void {
+    this.selectedProjectForChat = project;
+    // The ProjectChatComponent will automatically update via ngOnChanges
   }
 }
