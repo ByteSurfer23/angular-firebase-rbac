@@ -10,7 +10,6 @@ import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { getDatabase, provideDatabase } from '@angular/fire/database';
 
 // NEW: Import RECAPTCHA_SETTINGS and RecaptchaSettings for correct configuration
-import { RECAPTCHA_SETTINGS, RecaptchaSettings, RecaptchaModule } from 'ng-recaptcha';
 import { provideHttpClient } from '@angular/common/http';
 
 
@@ -29,17 +28,6 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => getFirestore()),
     provideDatabase(() => getDatabase()),
     ScreenTrackingService,
-    UserTrackingService,
-    // RecaptchaModule is still imported via importProvidersFrom as it's a traditional NgModule
-    importProvidersFrom(
-      RecaptchaModule
-    ),
-    // Provide RECAPTCHA_SETTINGS using the injection token
-    {
-      provide: RECAPTCHA_SETTINGS,
-      useValue: {
-        siteKey: "6LcT33QrAAAAADYtebRWsQqSo9YA-W9uB3d8ekXA", // Your PUBLIC Site Key
-      } as RecaptchaSettings,
-    }
+    UserTrackingService
   ]
 };
