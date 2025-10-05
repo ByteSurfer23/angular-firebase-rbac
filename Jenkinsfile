@@ -1,5 +1,5 @@
 pipeline {
-    agent none  // no default agent, each stage specifies its agent , added modifications
+    agent none  // no default agent, each stage specifies its agent , added modifications , more modifications
 
     stages {
         stage('Build Angular') {
