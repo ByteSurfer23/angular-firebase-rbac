@@ -1,0 +1,68 @@
+Docker is used to support multiple dependencies versions and multiple OS , OS differences breaks scripts , so 
+what may work in one OS may not in the other , Docker solves this by creating the same image with the same dependencies
+for both the OS , hence multiple OS runs same envs , you can push docker image to docker hub and then run anywhere , dockerhub
+is like github for docker , isolation occurs and hence reduces dependency clashes, can run multiple versions on the same host
+
+A container is a set of images (mostly Linux based)
+Base layer image - Linux based 
+Intemediary images (config etx)
+Application images - Based on what your application is 
+
+OS = Applications + Kernel 
+
+VM = OS level virtualization 
+Docker = Appln level virtualization 
+
+Virtualization - Emulating something , in the VM the hypervisor emulates the hardware and the VM has its own set of applications
+& kernel 
+
+Container can also be viewed as a running env for img 
+
+# 1️ Build an image from Dockerfile
+docker build -t my-image .
+
+# 2️ List all images
+docker images
+
+# 3️ Remove an image
+docker rmi my-image
+
+# 4️ Run a container (foreground)
+docker run -p 8080:80 my-image
+
+# 5️ Run a container in background (detached)
+docker run -d -p 8080:80 my-image
+
+# 6️ List running containers
+docker ps
+
+# 7️ List all containers (running + stopped)
+docker ps -a
+
+# 8️ Stop a running container
+docker stop <container_id_or_name>
+
+# 9️ Start a stopped container
+docker start <container_id_or_name>
+
+# 10 Restart a container
+docker restart <container_id_or_name>
+
+# 11️ Remove a stopped container
+docker rm <container_id_or_name>
+
+# 12️ View logs of a container
+docker logs <container_id_or_name>
+
+# 13️ Follow logs in real-time
+docker logs -f <container_id_or_name>
+
+# 14 Open shell inside a running container
+docker exec -it <container_id_or_name> sh
+
+# 15 Remove all stopped containers, unused images, networks (clean up)
+docker system prune -f
+
+SSR	Render --- HTML on the server --- Faster load, SEO
+Hydration	---- Attach JS interactivity to server-rendered HTML --- Make page dynamic and interactive
+Hydration Error	 ----- Mismatch between server HTML and client JS ------- Fix rendering issues during hydration
