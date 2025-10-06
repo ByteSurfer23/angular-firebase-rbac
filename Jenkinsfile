@@ -1,6 +1,10 @@
 pipeline {
-    agent none  // no default agent, each stage specifies its agent , added modifications , more modifications , more modifications
-
+     // no default agent, each stage specifies its agent , added modifications , more modifications , more modifications
+     agent {
+        docker {
+            image 'node:14' // Use a Node.js image
+            args '-p 3000:80' // Map the app's port to host
+        }
     stages {
         stage('Build Angular') {
             
