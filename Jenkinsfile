@@ -3,7 +3,7 @@ pipeline {
 
     stages {
         stage('Build Angular') {
-            agent { label 'node-agent' } // dynamic agent with Node.js
+            
             steps {
                 echo "Installing dependencies and building Angular..."
                 sh 'npm install'
@@ -12,7 +12,7 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            agent { label 'docker-agent' } // dynamic agent with Docker
+            
             steps {
                 echo "Building Docker image..."
                 sh 'docker build -t angular-app .'
@@ -21,7 +21,7 @@ pipeline {
         }
 
         stage('Deploy Docker Container') {
-            agent { label 'docker-agent' } // dynamic agent with Docker
+        
             steps {
                 echo "Deploying Docker container..."
                 sh '''
@@ -31,9 +31,5 @@ pipeline {
                 '''
             }
         }
-    }
-
-    triggers {
-        pollSCM('H/5 * * * *') // optional: checks GitHub every 5 minutes
     }
 }
