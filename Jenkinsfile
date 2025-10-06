@@ -1,13 +1,14 @@
 pipeline {
-     // no default agent, each stage specifies its agent , added modifications , more modifications , more modifications
-     agent {
+    // Pipeline-level agent (each stage can override if needed)
+    agent {
         docker {
-            image 'node:14' // Use a Node.js image
+            image 'node:14'  // Use a Node.js image
             args '-p 3000:80' // Map the app's port to host
         }
+    }
+
     stages {
         stage('Build Angular') {
-            
             steps {
                 echo "Installing dependencies and building Angular..."
                 sh 'npm install'
@@ -16,7 +17,6 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            
             steps {
                 echo "Building Docker image..."
                 sh 'docker build -t angular-app .'
@@ -25,7 +25,6 @@ pipeline {
         }
 
         stage('Deploy Docker Container') {
-        
             steps {
                 echo "Deploying Docker container..."
                 sh '''
@@ -35,5 +34,5 @@ pipeline {
                 '''
             }
         }
-    }
-}
+    } // end stages
+} // end pipeline
