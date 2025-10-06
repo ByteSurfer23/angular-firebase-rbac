@@ -3,7 +3,7 @@ pipeline {
     agent {
         docker {
             image 'node:12'  // Use a Node.js image
-            args '-p 3000:80' // Map the app's port to host
+            args '-u 0 3000:80' // Map the app's port to host
         }
     }
 
