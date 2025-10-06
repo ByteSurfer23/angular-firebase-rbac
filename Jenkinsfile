@@ -2,7 +2,7 @@ pipeline {
     // Pipeline-level agent (each stage can override if needed)/modified 1
     agent {
         docker {
-            image 'node:14'  // Use a Node.js image
+            image 'node:12'  // Use a Node.js image
             args '-p 3000:80' // Map the app's port to host
         }
     }
