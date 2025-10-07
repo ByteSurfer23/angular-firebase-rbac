@@ -41,7 +41,7 @@ testem.log
 .DS_Store
 Thumbs.db
 
-# Firebase , modifications
+# Firebase , modifications , more modficiations
 .firebase
 *-debug.log
 .runtimeconfig.json
