@@ -1,6 +1,6 @@
 # Stage 1: Build Angular App
 # Use lightweight Node image (alpine) for fast builds
-FROM node:20-alpine as build
+FROM node:22-alpine as build
 
 # Set working directory inside the container
 WORKDIR /app
