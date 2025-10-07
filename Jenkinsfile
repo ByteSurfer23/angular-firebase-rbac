@@ -2,17 +2,11 @@ pipeline {
     agent {
         docker {
             image 'node:22.16.0'  // Use a specific Node.js version image
-            args '-u 0 -p 3000:80' // Run as root user, map ports as needed
+            args '-u 0 -p 3000:someport' // Run as root user, map ports as needed
         }
     }
 
     stages {
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()  // Clean workspace fully before starting build to avoid stale files
-            }
-        }
-
         stage('Install Dependencies and Build Angular') {
             steps {
                 echo "Installing dependencies and building Angular..."
