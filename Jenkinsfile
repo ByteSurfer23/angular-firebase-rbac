@@ -16,7 +16,8 @@ pipeline {
         stage('Build Angular') {
             steps {
                 echo "Installing dependencies and building Angular..."
-                sh 'npm install'
+                sh 'rm -rf node_modules package-lock.json'
+                sh 'npm ci'
                 sh 'npm run build --prod'
             }
         }
