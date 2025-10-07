@@ -16,8 +16,6 @@ pipeline {
         stage('Install Dependencies and Build Angular') {
             steps {
                 echo "Installing dependencies and building Angular..."
-                sh 'rm -rf node_modules package-lock.json'
-                sh 'npm cache clean --force'  // Clean npm cache to avoid corrupted installations
                 sh 'npm ci'                   // Clean install dependencies from lock file
                 sh 'npm run build -- --prod'  // Build Angular with production flag, note the double --
             }
